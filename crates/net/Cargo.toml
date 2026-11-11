@@ -12,3 +12,7 @@ workspace = true
 
 [dependencies]
 tls-probe.workspace = true
+tokio = { version = "1.54.1", default-features = false, features = ["net", "time", "io-util", "rt", "sync"] }
+
+[dev-dependencies]
+tokio = { version = "1.54.1", default-features = false, features = ["macros", "rt", "test-util", "net", "time", "io-util", "sync"] }
