@@ -18,3 +18,7 @@ openssl-fallback = ["checks/openssl-fallback"]
 checks.workspace = true
 net.workspace = true
 output.workspace = true
+tokio = { version = "1.54.1", default-features = false, features = ["sync", "time", "rt", "io-util", "fs"] }
+
+[dev-dependencies]
+tokio = { version = "1.54.1", default-features = false, features = ["macros", "rt", "test-util", "sync", "time", "io-util", "fs", "net"] }

@@ -199,6 +199,11 @@ pub struct ConnectAttempt {
     /// Исходный вид ошибки ввода-вывода; для истёкшего
     /// [`Timeouts::connect`] — [`io::ErrorKind::TimedOut`].
     pub io_kind: io::ErrorKind,
+    /// Код ошибки ОС, если ошибка пришла от системного вызова; `None` для
+    /// истёкшего [`Timeouts::connect`]. Нужен движку, чтобы распознать
+    /// нехватку дескрипторов (EMFILE, ENFILE), у которой нет стабильного
+    /// [`io::ErrorKind`].
+    pub raw_os_error: Option<i32>,
     /// Текст исходной ошибки.
     pub message: String,
     /// Сколько длилась попытка.
@@ -217,6 +222,7 @@ impl ConnectAttempt {
             stage,
             failure: ConnectFailure::from_io_kind(error.kind()),
             io_kind: error.kind(),
+            raw_os_error: error.raw_os_error(),
             message: error.to_string(),
             elapsed,
         }
@@ -585,6 +591,7 @@ where
             stage: ConnectStage::Connect,
             failure: ConnectFailure::Timeout,
             io_kind: io::ErrorKind::TimedOut,
+            raw_os_error: None,
             message: format!("нет ответа за {} мс", timeout.as_millis()),
             elapsed,
         }),
@@ -705,6 +712,7 @@ mod tests {
             stage: ConnectStage::Connect,
             failure,
             io_kind,
+            raw_os_error: None,
             message: "тест".to_owned(),
             elapsed: Duration::from_millis(7),
         };
