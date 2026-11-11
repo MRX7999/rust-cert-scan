@@ -1,0 +1,20 @@
+[package]
+name = "engine"
+description = "Движок сканирования: цели, планировщик, лимиты, backoff, checkpoint"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true
+
+[features]
+default = []
+openssl-fallback = ["checks/openssl-fallback"]
+
+[dependencies]
+checks.workspace = true
+net.workspace = true
+output.workspace = true

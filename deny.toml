@@ -1,0 +1,53 @@
+# Конфигурация cargo-deny (P0-03). Запуск: `cargo deny check`.
+# Лицензия проекта — GPL-2.0-only (docs/DECISIONS.md, D-01).
+
+[graph]
+# Проверяются только поддерживаемые платформы (docs/DECISIONS.md, D-06).
+targets = [
+    "aarch64-apple-darwin",
+    "x86_64-unknown-linux-gnu",
+    "x86_64-unknown-linux-musl",
+]
+all-features = true
+
+[advisories]
+version = 2
+yanked = "deny"
+ignore = []
+
+[licenses]
+version = 2
+confidence-threshold = 0.9
+# Пока зависимостей нет, большинство лицензий из списка не встречается.
+unused-allowed-license = "allow"
+allow = [
+    "MIT",
+    # ВНИМАНИЕ: Apache-2.0 без альтернативы формально несовместима с GPLv2
+    # (позиция FSF). В списке она оставлена ради крейтов с двойной лицензией
+    # `MIT OR Apache-2.0`, которые используются на условиях MIT. cargo-deny
+    # не отличает «строго Apache-2.0» от «Apache-2.0 OR MIT», поэтому каждую
+    # зависимость с лицензией строго Apache-2.0 надо проверять вручную перед
+    # распространением бинарников (docs/DECISIONS.md, D-09).
+    "Apache-2.0",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "ISC",
+    "Unicode-3.0",
+    "Unicode-DFS-2016",
+    "Zlib",
+    "MPL-2.0",
+    # GPL-2.0 в действующих идентификаторах SPDX: сам проект и данные testssl.sh.
+    "GPL-2.0-only",
+    "GPL-2.0-or-later",
+]
+
+[bans]
+multiple-versions = "warn"
+highlight = "all"
+
+[sources]
+# Только crates.io: сторонние реестры и git-зависимости запрещены.
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]
+allow-git = []

@@ -1,0 +1,22 @@
+[package]
+name = "checks"
+description = "Проверки сканера: общий trait, кэш фактов и реестр"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true
+
+[features]
+default = []
+openssl-fallback = ["tls-session/openssl-fallback"]
+
+[dependencies]
+net.workspace = true
+output.workspace = true
+tls-probe.workspace = true
+tls-session.workspace = true
+x509-check.workspace = true

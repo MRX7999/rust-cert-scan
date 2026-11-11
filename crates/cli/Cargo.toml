@@ -1,0 +1,23 @@
+[package]
+name = "cli"
+description = "Интерфейс командной строки и бинарник certscan"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true
+
+[[bin]]
+name = "certscan"
+path = "src/main.rs"
+
+[features]
+default = []
+openssl-fallback = ["engine/openssl-fallback"]
+
+[dependencies]
+engine.workspace = true
+output.workspace = true

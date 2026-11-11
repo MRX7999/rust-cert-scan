@@ -1,0 +1,62 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/tls-data",
+    "crates/tls-probe",
+    "crates/tls-session",
+    "crates/net",
+    "crates/x509-check",
+    "crates/checks",
+    "crates/engine",
+    "crates/output",
+    "crates/cli",
+    "xtask",
+]
+# fuzz/ — отдельный workspace cargo-fuzz (nightly), в общую сборку не входит.
+exclude = ["fuzz"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.96"
+license = "GPL-2.0-only"
+publish = false
+
+# Внутренние крейты workspace. Внешние зависимости добавляются только через
+# `cargo add`, чтобы версии были реальными и попадали в Cargo.lock.
+[workspace.dependencies]
+tls-data = { path = "crates/tls-data" }
+tls-probe = { path = "crates/tls-probe" }
+tls-session = { path = "crates/tls-session" }
+net = { path = "crates/net" }
+x509-check = { path = "crates/x509-check" }
+checks = { path = "crates/checks" }
+engine = { path = "crates/engine" }
+output = { path = "crates/output" }
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+missing_docs = "warn"
+
+# Требования docs/PLAN.md («Общие критерии приёмки») и ARCHITECTURE.md, раздел 9:
+# без unwrap, expect, panic! и индексации без проверки. В тестах эти линты
+# ослаблены через clippy.toml.
+[workspace.lints.clippy]
+unwrap_used = "warn"
+expect_used = "warn"
+panic = "warn"
+indexing_slicing = "warn"
+
+[profile.release]
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+strip = true
+opt-level = 3
+
+# Сборки для расследования падений: с символами и раскруткой стека.
+[profile.release-debug]
+inherits = "release"
+strip = false
+panic = "unwind"
+debug = true

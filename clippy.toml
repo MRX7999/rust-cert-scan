@@ -1,0 +1,6 @@
+# Линты unwrap_used, expect_used, panic и indexing_slicing включены в
+# [workspace.lints.clippy]; в тестовом коде они не применяются.
+allow-unwrap-in-tests = true
+allow-expect-in-tests = true
+allow-panic-in-tests = true
+allow-indexing-slicing-in-tests = true

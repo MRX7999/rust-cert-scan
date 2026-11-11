@@ -1,0 +1,32 @@
+# Сборка
+target/
+
+# Состояние прерванных сканов
+*.checkpoint
+
+# Локальные результаты сканов (только в корне, чтобы не задеть фикстуры и эталоны)
+/results/
+/scans/
+/out*.json
+/*.ndjson
+/*.scan.json
+
+# Окружение
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Фаззинг (cargo-fuzz): сборка, локальный корпус, найденные падения, покрытие
+/fuzz/target/
+/fuzz/corpus/
+/fuzz/artifacts/
+/fuzz/coverage/
+
+# Тестовые стенды: ключи и сертификаты генерируются на лету во временный каталог
+/tests/stands/*/.tmp/
+/tests/stands/**/*.pem
+/tests/stands/**/*.key
+/tests/stands/**/*.crt
+/tests/stands/**/*.csr
+/tests/stands/**/*.srl

@@ -1,0 +1,3 @@
+# Служебные команды разработки: `cargo xtask <подкоманда>` (см. xtask/src/main.rs).
+[alias]
+xtask = "run --package xtask --"

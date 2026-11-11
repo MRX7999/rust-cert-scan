@@ -1,0 +1,14 @@
+[package]
+name = "x509-check"
+description = "Разбор сертификатов X.509, цепочки, trust stores, OCSP и CRL"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+tls-data.workspace = true
