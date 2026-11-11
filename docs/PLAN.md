@@ -188,6 +188,7 @@ cargo run -p cli -- --version
 #### P1-10. net: Connector и DNS-кэш
 
 - Файлы: `crates/net/src/{connector.rs,dns.rs,timeouts.rs,stats.rs}`.
+- Уточнение (2026-11-11): выполнено. Фактический API — `Connector::connect(&Target, &ConnStats) -> Result<Conn, ConnectError>`: область счётчиков передаётся в вызов (область проверки — потомок области цели), разрешение на соединение (P1-12) берётся до вызова. Режимы — `ResolveOptions` (`-4`, `-6`, `--ip <addr>`, `--dns none`); `--ip one|all` и `--dns full|min` не входят. Значения по умолчанию, порядок перебора адресов и классы ошибок — `docs/DECISIONS.md`, D-17. Таймаут connect проверяется на приостановленных часах tokio (без внешних адресов), сброс при connect — тестом классификации; отказ (`refused`) — на локальном порту без listener. Proxy и STARTTLS остаются в Фазе 3, точка расширения — `Conn<S>`.
 - Вход: ARCH 6.1, 6.5.
 - Выход: `Connector::connect(target) -> Conn` с раздельными таймаутами connect/handshake/read; счётчик соединений на цель; кэш DNS с TTL и отрицательным кэшем; режимы `-4`, `-6`, `--ip`, `--dns none`.
 - Приёмка: тесты на локальном listener: успешный connect, таймаут, RST; повторный резолв имени не делает второго запроса (тест со счётчиком); ошибки классифицированы (`timeout`, `reset`, `refused`).
@@ -195,7 +196,8 @@ cargo run -p cli -- --version
 
 #### P1-11. net: обмен пробником
 
-- Файлы: `crates/net/src/probe_io.rs`.
+- Файлы: `crates/net/src/{probe_io.rs,probe_io_tests.rs}`.
+- Уточнение (2026-11-11): выполнено. Кроме `send_and_collect(conn, hello_bytes, until) -> ProbeTranscript` (один обмен и закрытие) есть `ProbeSession` — несколько раундов на одном соединении с общим декодером (обмен с HelloRetryRequest, дочитывание) и вариант для SSLv2 (`ProbeSession::sslv2`). Условия остановки — `Until`, причины — `StopReason` (метка `limit` при превышении лимита). Таймауты, буфер чтения, закрытие соединения — `docs/DECISIONS.md`, D-17. Тесты против стендов помечены `#[ignore]`: `cargo test -p net -- --ignored` при поднятых стендах на портах 4433, 4434, 4435.
 - Вход: P1-10, P1-04.
 - Выход: `send_and_collect(conn, hello_bytes, until) -> ProbeTranscript`: отправка байтов, чтение через `Decoder` до заданного события, лимита или таймаута; переиспользуемый буфер.
 - Приёмка: тесты с mock-сервером, отдающим фикстуры целиком, по частям и с задержкой; при превышении лимита чтения соединение закрывается с ошибкой `limit`.
