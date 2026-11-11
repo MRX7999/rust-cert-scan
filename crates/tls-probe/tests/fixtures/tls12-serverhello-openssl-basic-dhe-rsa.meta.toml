@@ -1,0 +1,33 @@
+format = 1
+description = "Ответ на ClientHello TLS 1.2 от стенда с RSA-сертификатом и шифром DHE-RSA: ServerHello, Certificate, ServerKeyExchange, ServerHelloDone"
+direction = "server"
+request = "tls12-clienthello-openssl-basic-dhe-rsa"
+length = 1650
+
+[source]
+kind = "stand"
+stand = "openssl-basic"
+server = "OpenSSL 4.1.0 23 Oct 2026 (Library: OpenSSL 4.1.0 23 Oct 2026)"
+server_command = "STAND_PORT=4435 STAND_KEY_TYPE=rsa STAND_CIPHER=DHE-RSA-AES256-GCM-SHA384 tests/stands/openssl-basic/run.sh"
+capture_command = "cargo xtask record-fixture --addr 127.0.0.1:4435 --scenario tls12-dhe-rsa --stand openssl-basic --server 'OpenSSL 4.1.0 23 Oct 2026 (Library: OpenSSL 4.1.0 23 Oct 2026)' --random 059edbc9adcb3f666263cc687b0af2f1efdd66b4df4a0464e44f7b4e7ed36290"
+date = "2026-11-11"
+
+[source.conditions]
+key_type = "rsa"
+cipher = "DHE-RSA-AES256-GCM-SHA384"
+
+[expected]
+outcome = "ok"
+exchange = "server_hello_done"
+summary = "ServerHello TLS 1.2 с шифром DHE-RSA, затем Certificate с RSA-сертификатом, ServerKeyExchange с параметрами DH (p, g, Ys) и подписью, ServerHelloDone"
+
+[expected.fields]
+legacy_version = "0x0303"
+version = "0x0303"
+cipher_suite = "0x009f"
+compression_method = "0x00"
+hello_retry_request = "false"
+messages = "server_hello, certificate, server_key_exchange, server_hello_done"
+session_id_len = "0"
+downgrade_marker = "tls12"
+extensions = "0xff01, 0x0023, 0x0017"

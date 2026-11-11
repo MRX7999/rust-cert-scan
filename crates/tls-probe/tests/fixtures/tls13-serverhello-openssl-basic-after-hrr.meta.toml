@@ -1,0 +1,31 @@
+format = 1
+description = "Полный поток сервера в обмене с HelloRetryRequest: HRR, ChangeCipherSpec, второй ServerHello и первая зашифрованная запись"
+direction = "server"
+request = "tls13-clienthello-openssl-basic-no-key-share"
+second_request = "tls13-clienthello-openssl-basic-after-hrr"
+second_request_offset = 99
+length = 282
+
+[source]
+kind = "stand"
+stand = "openssl-basic"
+server = "OpenSSL 4.1.0 23 Oct 2026 (Library: OpenSSL 4.1.0 23 Oct 2026)"
+server_command = "tests/stands/openssl-basic/run.sh"
+capture_command = "cargo xtask record-fixture --addr 127.0.0.1:4433 --scenario tls13-hrr --stand openssl-basic --server 'OpenSSL 4.1.0 23 Oct 2026 (Library: OpenSSL 4.1.0 23 Oct 2026)' --random 70798b810644494958694ad5cf71bf7bffc96fec2f512365b1ea7ac61c7ef2ca --key-share a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90"
+date = "2026-11-11"
+
+[expected]
+outcome = "ok"
+exchange = "retry_complete"
+summary = "HelloRetryRequest и ChangeCipherSpec, после второго ClientHello — ServerHello (не HelloRetryRequest) с supported_versions = TLS 1.3 и key_share x25519, затем одна зашифрованная запись application_data"
+
+[expected.fields]
+legacy_version = "0x0303"
+version = "0x0304"
+cipher_suite = "0x1302"
+compression_method = "0x00"
+hello_retry_request = "false"
+key_share_group = "0x001d"
+messages = "server_hello (HelloRetryRequest), change_cipher_spec, server_hello, application_data (зашифрована)"
+session_id_len = "32"
+extensions = "0x002b, 0x0033"

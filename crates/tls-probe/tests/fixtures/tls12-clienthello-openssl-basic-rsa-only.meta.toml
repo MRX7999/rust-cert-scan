@@ -1,0 +1,23 @@
+format = 1
+description = "ClientHello TLS 1.2 только с RSA-шифрами, которых стенд с ECDSA-сертификатом не поддерживает"
+direction = "client"
+length = 98
+
+[source]
+kind = "stand"
+stand = "openssl-basic"
+server = "OpenSSL 4.1.0 23 Oct 2026 (Library: OpenSSL 4.1.0 23 Oct 2026)"
+server_command = "tests/stands/openssl-basic/run.sh"
+capture_command = "cargo xtask record-fixture --addr 127.0.0.1:4433 --scenario no-shared-cipher --stand openssl-basic --server 'OpenSSL 4.1.0 23 Oct 2026 (Library: OpenSSL 4.1.0 23 Oct 2026)' --random 6dee869f8bd59faccaefc55e4f303ab7268ceb1869e30ca52b91da61a7a5d084"
+date = "2026-11-11"
+
+[expected]
+outcome = "ok"
+summary = "ClientHello в одной записи; собирается билдером tls-probe побайтно так же"
+
+[expected.fields]
+record_version = "0x0301"
+legacy_version = "0x0303"
+session_id_len = "0"
+cipher_suites = "0x009d, 0x009c, 0x003d, 0x002f"
+extensions = "0x0000, 0x000d, 0x0017"

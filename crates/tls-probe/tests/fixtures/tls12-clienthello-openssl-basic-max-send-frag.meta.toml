@@ -1,0 +1,23 @@
+format = 1
+description = "ClientHello TLS 1.2 для варианта стенда с -max_send_frag: тот же, что в сценарии tls12"
+direction = "client"
+length = 120
+
+[source]
+kind = "stand"
+stand = "openssl-basic"
+server = "OpenSSL 4.1.0 23 Oct 2026 (Library: OpenSSL 4.1.0 23 Oct 2026)"
+server_command = "STAND_PORT=4434 STAND_MAX_SEND_FRAG=512 STAND_EXTRA_SAN=DNS:fragment-padding-01.stand.localhost,DNS:fragment-padding-02.stand.localhost,DNS:fragment-padding-03.stand.localhost,DNS:fragment-padding-04.stand.localhost,DNS:fragment-padding-05.stand.localhost,DNS:fragment-padding-06.stand.localhost,DNS:fragment-padding-07.stand.localhost,DNS:fragment-padding-08.stand.localhost tests/stands/openssl-basic/run.sh"
+capture_command = "cargo xtask record-fixture --addr 127.0.0.1:4434 --scenario tls12-fragmented --stand openssl-basic --server 'OpenSSL 4.1.0 23 Oct 2026 (Library: OpenSSL 4.1.0 23 Oct 2026)' --random 83e51a53706689832a7a7c1c8c6fc8e58494cb5de1a66226e578ac4cbd709a6d"
+date = "2026-11-11"
+
+[expected]
+outcome = "ok"
+summary = "ClientHello в одной записи; собирается билдером tls-probe побайтно так же"
+
+[expected.fields]
+record_version = "0x0301"
+legacy_version = "0x0303"
+session_id_len = "0"
+cipher_suites = "0xc02c, 0xc02b, 0xcca9, 0x00ff"
+extensions = "0x0000, 0x000a, 0x000b, 0x000d, 0x0017, 0x0023"
