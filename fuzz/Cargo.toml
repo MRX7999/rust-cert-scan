@@ -1,0 +1,83 @@
+[package]
+name = "certscan-fuzz"
+description = "Цели cargo-fuzz для certscan"
+version = "0.0.0"
+edition = "2024"
+license = "GPL-2.0-only"
+publish = false
+
+[package.metadata]
+cargo-fuzz = true
+
+# Отдельный workspace: fuzz/ исключён из корневого (exclude = ["fuzz"]).
+# Цели запускаются на nightly через cargo-fuzz; тела целей лежат в
+# библиотеке (src/lib.rs) и проверяются на stable: `cargo check` и
+# `cargo test --manifest-path fuzz/Cargo.toml` (прогон на seed-файлах).
+[workspace]
+
+[lib]
+name = "certscan_fuzz"
+path = "src/lib.rs"
+doc = false
+bench = false
+
+[dependencies]
+libfuzzer-sys = "0.4.13"
+tls-data = { path = "../crates/tls-data" }
+tls-probe = { path = "../crates/tls-probe" }
+
+[[bin]]
+name = "record_layer"
+path = "fuzz_targets/record_layer.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "server_hello"
+path = "fuzz_targets/server_hello.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "certificate"
+path = "fuzz_targets/certificate.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "server_kx"
+path = "fuzz_targets/server_kx.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "sslv2"
+path = "fuzz_targets/sslv2.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "server_message"
+path = "fuzz_targets/server_message.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "client_hello"
+path = "fuzz_targets/client_hello.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "alert"
+path = "fuzz_targets/alert.rs"
+test = false
+doc = false
+bench = false
