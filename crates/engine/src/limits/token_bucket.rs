@@ -22,6 +22,45 @@
 //! состоится (отмена на следующем этапе захвата), его возвращает
 //! [`TokenBucket::refund`].
 //!
+//! # Возврат токена
+//!
+//! Выдача в момент `t0` сдвигает состояние: `tat = max(tat, t0) + c`, где
+//! `c` — интервал, действовавший при выдаче. Квитанция [`Token`] хранит `c`
+//! и `t0`. Возврат в момент `r` сдвигает состояние назад на
+//! `c - min(c, r - t0)`.
+//!
+//! Почему не просто «минус текущий интервал»:
+//!
+//! 1. Между выдачей и возвратом скорость могла измениться (AIMD делит
+//!    скорость хоста пополам). Вычитание нового, более длинного интервала
+//!    вернуло бы больше, чем было списано. Пример: burst 2, 10 в секунду;
+//!    два токена подряд дают `tat = t0 + 200 мс`; скорость снижена до 5 в
+//!    секунду, второй токен возвращён — вычитание 200 мс дало бы
+//!    `tat = t0`, полный bucket и ещё два токена сразу: три состоявшихся
+//!    соединения в один момент при burst 2. Поэтому вычитается `c` из
+//!    квитанции.
+//! 2. Пока токен был на руках, bucket стоял ниже потолка и набирал время,
+//!    которое без этой выдачи срезал бы потолок `burst`. Пример: burst 2,
+//!    интервал 100 мс, токены A в 0 мс и B в 50 мс, возврат A в 50 мс.
+//!    Вычитание полного `c` дало бы `tat = 100 мс` и следующие токены в 50
+//!    и 100 мс; без выдачи A было бы `tat = 150 мс` и токены в 50 и 150 мс.
+//!
+//! Доказательство границы. Пусть `n = max(tat, t0)` — состояние перед
+//! выдачей, приведённое к моменту выдачи (`n >= t0`). Сравним ход с
+//! выдачей (`a = n + c`) и без неё (`n`). Каждая следующая выдача в момент
+//! `t_i` применяет к состоянию отображение `x -> max(x, t_i) + T_i`; оно
+//! монотонно и не увеличивает расстояний, поэтому разность `d` двух ходов
+//! остаётся в отрезке от 0 до `c`. Она уменьшается только там, где потолок
+//! срезает ход без выдачи: `d >= c - (t_i - n) >= c - (r - t0)`, так как
+//! `n >= t0` и `t_i <= r`. Значит, состояние без выдачи не меньше
+//! `tat - c + min(c, r - t0)` — ровно того, что устанавливает возврат.
+//! Состояние после возврата не раньше, чем было бы без выдачи вовсе,
+//! поэтому состоявшиеся соединения укладываются в `burst + D / T` за любой
+//! интервал `D`. Цена: если bucket в момент выдачи не был полон и других
+//! выдач не было, возврат теряет до `min(c, r - t0)`, то есть меньше одного
+//! токена на отмену. Если bucket был полон (`n = t0`), потерь нет:
+//! состояние после возврата не позже `r`, и потолок его срезает.
+//!
 //! # Скорость
 //!
 //! [`Rate`] хранит скорость в тысячных соединения в секунду: адаптивный
@@ -80,6 +119,18 @@ impl Rate {
     }
 }
 
+/// Квитанция выданного токена: что и когда было списано. Нужна для
+/// возврата ([`TokenBucket::refund`]); правило возврата — в документации
+/// модуля.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Token {
+    /// Интервал, на который выдача сдвинула состояние; ноль для
+    /// неограниченной скорости.
+    charged: Duration,
+    /// Момент выдачи.
+    issued_at: Instant,
+}
+
 /// Token bucket; описание — в документации модуля.
 #[derive(Debug)]
 pub struct TokenBucket {
@@ -131,11 +182,24 @@ impl TokenBucket {
     /// Время до ближайшего токена, если сейчас его нет; состояние при этом
     /// не меняется.
     pub fn try_take(&self) -> Result<(), Duration> {
+        self.try_take_token().map(drop)
+    }
+
+    /// То же, что [`TokenBucket::try_take`], с квитанцией для возврата.
+    ///
+    /// # Errors
+    ///
+    /// Время до ближайшего токена, если сейчас его нет; состояние при этом
+    /// не меняется.
+    pub fn try_take_token(&self) -> Result<Token, Duration> {
         let mut state = self.lock();
-        let Some(interval) = state.rate.interval() else {
-            return Ok(());
-        };
         let now = Instant::now();
+        let Some(interval) = state.rate.interval() else {
+            return Ok(Token {
+                charged: Duration::ZERO,
+                issued_at: now,
+            });
+        };
         let tolerance = interval.saturating_mul(state.burst.saturating_sub(1));
         let wait = state
             .tat
@@ -146,30 +210,54 @@ impl TokenBucket {
             return Err(wait);
         }
         let base = state.tat.max(now);
-        state.tat = base.checked_add(interval).unwrap_or(base);
-        Ok(())
+        let Some(next) = base.checked_add(interval) else {
+            // Переполнение момента времени: состояние не сдвинуто, значит и
+            // возвращать нечего.
+            state.tat = base;
+            return Ok(Token {
+                charged: Duration::ZERO,
+                issued_at: now,
+            });
+        };
+        state.tat = next;
+        Ok(Token {
+            charged: interval,
+            issued_at: now,
+        })
     }
 
     /// Ждёт токен и возвращает время ожидания. Ожидающие обслуживаются в
     /// порядке прихода; сброс future токен не расходует.
     pub async fn take(&self) -> Duration {
+        let (_token, waited) = self.take_token().await;
+        waited
+    }
+
+    /// То же, что [`TokenBucket::take`], с квитанцией для возврата.
+    pub async fn take_token(&self) -> (Token, Duration) {
         let started = Instant::now();
         let _turn = self.queue.lock().await;
         loop {
-            match self.try_take() {
-                Ok(()) => return started.elapsed(),
+            match self.try_take_token() {
+                Ok(token) => return (token, started.elapsed()),
                 Err(wait) => tokio::time::sleep(wait).await,
             }
         }
     }
 
-    /// Возвращает один выданный токен: соединение не состоялось. Вызывать
-    /// не чаще одного раза на выданный токен.
-    pub fn refund(&self) {
-        let mut state = self.lock();
-        if let Some(interval) = state.rate.interval() {
-            state.tat = state.tat.checked_sub(interval).unwrap_or(state.tat);
+    /// Возвращает выданный токен: соединение не состоялось. Состояние
+    /// сдвигается назад на списанный при выдаче интервал за вычетом
+    /// времени, прошедшего с выдачи; правило и доказательство того, что
+    /// возврат не даёт выдачи сверх лимита, — в документации модуля.
+    /// Квитанция поглощается: вернуть токен дважды нельзя.
+    pub fn refund(&self, token: Token) {
+        let held = Instant::now().saturating_duration_since(token.issued_at);
+        let back = token.charged.saturating_sub(held);
+        if back.is_zero() {
+            return;
         }
+        let mut state = self.lock();
+        state.tat = state.tat.checked_sub(back).unwrap_or(state.tat);
     }
 
     fn lock(&self) -> MutexGuard<'_, State> {
@@ -298,16 +386,128 @@ mod tests {
     #[tokio::test(start_paused = true)]
     async fn refund_returns_exactly_one_token() {
         let bucket = TokenBucket::new(Rate::per_second(TEN_PER_SECOND), 1);
-        assert_eq!(bucket.try_take(), Ok(()));
+        let token = bucket.try_take_token().unwrap();
         assert_eq!(bucket.try_take(), Err(STEP));
-        bucket.refund();
+        bucket.refund(token);
         assert_eq!(bucket.try_take(), Ok(()));
         assert_eq!(bucket.try_take(), Err(STEP));
 
         // Для неограниченной скорости возврат ничего не меняет.
         let unlimited = TokenBucket::new(Rate::Unlimited, 1);
-        unlimited.refund();
+        let token = unlimited.try_take_token().unwrap();
+        unlimited.refund(token);
         assert_eq!(unlimited.try_take(), Ok(()));
+    }
+
+    /// A6: возврат после снижения скорости вычитает интервал, списанный
+    /// при выдаче, а не новый. Иначе bucket снова стал бы полным и выдал
+    /// три токена в один момент при burst 2.
+    #[tokio::test(start_paused = true)]
+    async fn refund_after_a_rate_cut_does_not_issue_beyond_the_burst() {
+        let bucket = TokenBucket::new(Rate::per_second(TEN_PER_SECOND), 2);
+        assert_eq!(bucket.try_take(), Ok(()));
+        let cancelled = bucket.try_take_token().unwrap();
+        assert_eq!(bucket.try_take(), Err(STEP));
+
+        // AIMD делит скорость пополам: интервал 100 мс → 200 мс.
+        bucket.set_rate(Rate::per_second(5));
+        bucket.refund(cancelled);
+
+        // Возвращён ровно один токен: вместе с первым — burst.
+        assert_eq!(bucket.try_take(), Ok(()));
+        assert_eq!(bucket.try_take(), Err(STEP));
+
+        // Дальше — по одному за новый интервал.
+        tokio::time::advance(STEP).await;
+        assert_eq!(bucket.try_take(), Ok(()));
+        assert_eq!(bucket.try_take(), Err(Duration::from_millis(200)));
+    }
+
+    /// A6: возврат после повышения скорости тоже возвращает списанное —
+    /// 200 мс, а не новый интервал 100 мс.
+    #[tokio::test(start_paused = true)]
+    async fn refund_after_a_rate_raise_returns_what_was_charged() {
+        let bucket = TokenBucket::new(Rate::per_second(5), 2);
+        assert_eq!(bucket.try_take(), Ok(()));
+        let cancelled = bucket.try_take_token().unwrap();
+        bucket.set_rate(Rate::per_second(TEN_PER_SECOND));
+        // Два токена по 200 мс: при новом интервале 100 мс и burst 2
+        // следующий — через 300 мс.
+        assert_eq!(bucket.try_take(), Err(Duration::from_millis(300)));
+
+        // Возвращены списанные 200 мс: остался долг первого токена, и
+        // следующий доступен через 100 мс.
+        bucket.refund(cancelled);
+        assert_eq!(bucket.try_take(), Err(STEP));
+        tokio::time::advance(STEP).await;
+        assert_eq!(bucket.try_take(), Ok(()));
+    }
+
+    /// A6: время, набранное bucket'ом, пока токен был на руках, возвратом
+    /// не превращается в лишний токен.
+    #[tokio::test(start_paused = true)]
+    async fn refund_does_not_keep_the_time_gained_while_the_token_was_held() {
+        let half = Duration::from_millis(50);
+        let bucket = TokenBucket::new(Rate::per_second(TEN_PER_SECOND), 2);
+        let held = bucket.try_take_token().unwrap();
+        tokio::time::advance(half).await;
+        assert_eq!(bucket.try_take(), Ok(()));
+        bucket.refund(held);
+
+        // Как если бы первого токена не было: в bucket'е остался один
+        // токен, следующий — через полный интервал, а не через половину.
+        assert_eq!(bucket.try_take(), Ok(()));
+        assert_eq!(bucket.try_take(), Err(STEP));
+    }
+
+    /// A6: за любое окно в одну секунду состоявшихся выдач не больше
+    /// `burst + rate`, как бы ни чередовались выдачи и возвраты с разным
+    /// временем удержания токена.
+    #[tokio::test(start_paused = true)]
+    async fn refunds_never_let_kept_tokens_exceed_the_limit() {
+        const BURST: u32 = 3;
+        const STEPS: u32 = 600;
+        let tick = Duration::from_millis(10);
+        let window = Duration::from_secs(1);
+
+        let bucket = TokenBucket::new(Rate::per_second(TEN_PER_SECOND), BURST);
+        let start = Instant::now();
+        let mut issued: Vec<Duration> = Vec::new();
+        // Токен на руках и шаг, на котором он возвращается.
+        let mut held: Option<(Token, u32)> = None;
+        let mut taken = 0_u32;
+        let mut refunded = 0_u32;
+        for step in 0..STEPS {
+            if held.is_some_and(|(_, due)| due <= step)
+                && let Some((token, _)) = held.take()
+            {
+                bucket.refund(token);
+                refunded += 1;
+            }
+            while let Ok(token) = bucket.try_take_token() {
+                taken += 1;
+                // Каждый третий токен удерживается от 1 до 9 шагов и
+                // возвращается: соединение не состоялось.
+                if taken.is_multiple_of(3) && held.is_none() {
+                    held = Some((token, step + 1 + taken % 9));
+                } else {
+                    issued.push(start.elapsed());
+                }
+            }
+            tokio::time::advance(tick).await;
+        }
+        assert!(refunded > 10, "{refunded}");
+        assert!(issued.len() > 20, "{}", issued.len());
+
+        let allowed = usize::try_from(BURST + TEN_PER_SECOND).unwrap();
+        for (index, from) in issued.iter().enumerate() {
+            let in_window = issued
+                .iter()
+                .skip(index)
+                .take_while(|at| **at < from.saturating_add(window))
+                .count();
+            assert!(in_window <= allowed, "{in_window} выдач с {from:?}");
+        }
     }
 
     #[tokio::test(start_paused = true)]

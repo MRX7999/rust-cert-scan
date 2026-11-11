@@ -7,10 +7,11 @@ use std::time::Duration;
 
 use tokio::time::{Instant, sleep, timeout};
 
-use super::backoff::{Effective, Outcome};
+use super::backoff::{AimdConfig, Effective, Outcome};
 use super::breaker::{BreakerConfig, BreakerState, DisableReason, Reaction};
 use super::jitter::JitterRange;
-use super::limiter::{Denied, Limiter, LimitsConfig, UNLIMITED};
+use super::limiter::{Denied, Disablement, HostHandle, Limiter, LimitsConfig, UNLIMITED};
+use super::memory::MemoryConfig;
 use super::stats::StageSnapshot;
 use super::token_bucket::Rate;
 
@@ -545,7 +546,7 @@ async fn cancelled_or_dropped_probe_goes_to_the_next_caller() {
     let probe = host.acquire().await.unwrap();
     assert!(probe.is_probe());
     let busy = host.acquire().await;
-    assert!(matches!(busy, Err(Denied::Wait(pause)) if pause == ms(250)));
+    assert_eq!(busy.map(drop), Err(Denied::ProbeBusy));
 
     // Разрешение сброшено без исхода: пробное соединение возвращается.
     drop(probe);
@@ -719,11 +720,12 @@ async fn closed_port_disables_the_host_at_once() {
     let denied = host.acquire().await;
     assert!(matches!(
         denied,
-        Err(Denied::Disabled(DisableReason::PortClosed))
+        Err(Denied::Disabled(disablement))
+            if disablement.reason == DisableReason::PortClosed && !disablement.remembered
     ));
     let started = Instant::now();
     assert_eq!(
-        host.acquire_waiting().await.err(),
+        host.acquire_waiting().await.err().map(DisableReason::from),
         Some(DisableReason::PortClosed)
     );
     assert_eq!(started.elapsed(), Duration::ZERO);
@@ -746,10 +748,10 @@ async fn waiter_is_denied_when_the_host_is_disabled_meanwhile() {
     sleep(ms(1)).await;
 
     first.report(Outcome::ConnectRefused);
-    assert_eq!(
+    assert!(matches!(
         waiter.await.unwrap(),
-        Err(Denied::Disabled(DisableReason::PortClosed))
-    );
+        Err(Denied::Disabled(disablement)) if disablement.reason == DisableReason::PortClosed
+    ));
     assert_eq!(limiter.connections_in_use(), 0);
 }
 
@@ -791,6 +793,10 @@ async fn local_exhaustion_lowers_the_global_limit_and_it_recovers() {
         permit.report(Outcome::LocalExhaustion);
     }
     assert_eq!(limiter.connection_limit(), 4);
+    // A4: 64 → 32 → 16 → 8 → 4 — четыре фактических снижения; ещё два
+    // срабатывания пришлись на нижнюю границу и считаются отдельно.
+    assert_eq!(limiter.guard_cuts(), 4);
+    assert_eq!(limiter.guard_floor_hits(), 2);
 
     // Восстановление: шаг на каждые 32 исхода без локальной ошибки.
     for _ in 0..31 {
@@ -832,4 +838,395 @@ async fn waits_are_counted_for_the_host_and_for_the_scan() {
     let total = limiter.stats().snapshot();
     assert_eq!(total.host_connections, expected);
     assert_eq!(total.permits, 2);
+}
+
+/// A1: исход `LocalExhaustion` от соединения, выданного до размыкания, не
+/// должен возвращать breaker'у пробное соединение, которое ещё в полёте.
+#[tokio::test(start_paused = true)]
+async fn local_exhaustion_from_an_old_connection_does_not_duplicate_the_probe() {
+    let limiter = limiter(LimitsConfig {
+        breaker: BreakerConfig {
+            failure_threshold: 2,
+            ..BreakerConfig::default()
+        },
+        ..open_config()
+    });
+    let host = limiter.host(ip(1)).await;
+
+    // «Старое» соединение: выдано, пока breaker замкнут, и живёт дольше
+    // размыкания.
+    let old = host.acquire().await.unwrap();
+    assert!(!old.is_probe());
+
+    for _ in 0..2 {
+        let permit = host.acquire().await.unwrap();
+        assert_eq!(permit.report(Outcome::Reset), Reaction::Slow);
+    }
+    assert_eq!(host.breaker_state(), BreakerState::Open);
+    sleep(secs(5)).await;
+
+    let probe = host.acquire().await.unwrap();
+    assert!(probe.is_probe());
+    assert_eq!(host.breaker_state(), BreakerState::HalfOpen);
+
+    // Старое соединение упёрлось в нехватку локальных ресурсов, пока
+    // пробное ещё не завершено.
+    assert_eq!(old.report(Outcome::LocalExhaustion), Reaction::Local);
+    assert_eq!(host.breaker_state(), BreakerState::HalfOpen);
+
+    let second = host.acquire().await;
+    assert!(
+        matches!(second, Err(Denied::ProbeBusy)),
+        "второе пробное выдано, пока первое в полёте: {second:?}"
+    );
+
+    // Пробное по-прежнему одно, и его исход закрывает breaker.
+    assert_eq!(probe.report(Outcome::ConditionMet), Reaction::Recover);
+    assert_eq!(host.breaker_state(), BreakerState::Closed);
+}
+
+/// Конфигурация для тестов ожидания breaker'а: размыкание после двух
+/// неуспехов, без задержки backoff — моменты выдачи зависят только от
+/// breaker'а.
+fn waiting_config() -> LimitsConfig {
+    LimitsConfig {
+        breaker: BreakerConfig {
+            failure_threshold: 2,
+            ..BreakerConfig::default()
+        },
+        aimd: AimdConfig {
+            delay_initial: Duration::ZERO,
+            ..AimdConfig::default()
+        },
+        ..open_config()
+    }
+}
+
+/// Размыкает breaker хоста двумя сбросами.
+async fn trip_host(host: &HostHandle) {
+    for _ in 0..2 {
+        let permit = host.acquire().await.unwrap();
+        assert_eq!(permit.report(Outcome::Reset), Reaction::Slow);
+    }
+    assert_eq!(host.breaker_state(), BreakerState::Open);
+}
+
+/// A1: ответ сервера по старому соединению замыкает breaker; бывшее
+/// пробное после этого — обычное соединение.
+#[tokio::test(start_paused = true)]
+async fn response_on_an_old_connection_closes_half_open() {
+    let limiter = limiter(waiting_config());
+    let host = limiter.host(ip(1)).await;
+    let old = host.acquire().await.unwrap();
+    trip_host(&host).await;
+    sleep(secs(5)).await;
+
+    let probe = host.acquire().await.unwrap();
+    assert!(probe.is_probe());
+    assert_eq!(old.report(Outcome::FatalAlert), Reaction::Keep);
+    assert_eq!(host.breaker_state(), BreakerState::Closed);
+
+    let regular = host.acquire().await.unwrap();
+    assert!(!regular.is_probe());
+
+    // Неуспех бывшего пробного считается обычным: один неуспех замкнутый
+    // breaker не размыкает.
+    assert_eq!(probe.report(Outcome::Reset), Reaction::Slow);
+    assert_eq!(host.breaker_state(), BreakerState::Closed);
+    drop(regular);
+}
+
+/// A3: пока пробное занято, ожидающие не опрашивают breaker, а при
+/// изменении его состояния просыпаются сразу.
+#[tokio::test(start_paused = true)]
+async fn waiters_for_a_busy_probe_do_not_poll_and_wake_on_change() {
+    let limiter = limiter(waiting_config());
+    let host = Arc::new(limiter.host(ip(1)).await);
+    trip_host(&host).await;
+    sleep(secs(5)).await;
+    let probe = host.acquire().await.unwrap();
+    assert!(probe.is_probe());
+
+    let started = Instant::now();
+    let mut waiters = Vec::new();
+    for _ in 0..3 {
+        let host = Arc::clone(&host);
+        waiters.push(tokio::spawn(async move {
+            let permit = host.acquire_waiting().await.unwrap();
+            (permit.is_probe(), started.elapsed())
+        }));
+    }
+    sleep(ms(1)).await;
+
+    // Каждый ожидающий получил один отказ и ждёт уведомления.
+    let denied = host.stats().snapshot().denied;
+    assert_eq!(denied, 3);
+    sleep(secs(60)).await;
+    assert_eq!(
+        host.stats().snapshot().denied,
+        denied,
+        "ожидающие не опрашивают breaker по таймеру"
+    );
+    assert!(waiters.iter().all(|waiter| !waiter.is_finished()));
+
+    let reported = started.elapsed();
+    assert_eq!(probe.report(Outcome::ConditionMet), Reaction::Recover);
+    for waiter in waiters {
+        let (is_probe, at) = waiter.await.unwrap();
+        assert!(!is_probe);
+        assert_eq!(at, reported, "пробуждение в момент изменения состояния");
+    }
+}
+
+/// A3: отмена одного ожидания не теряет уведомление для остальных.
+#[tokio::test(start_paused = true)]
+async fn cancelled_waiter_does_not_swallow_the_wakeup() {
+    let limiter = limiter(waiting_config());
+    let host = Arc::new(limiter.host(ip(1)).await);
+    trip_host(&host).await;
+    sleep(secs(5)).await;
+    let probe = host.acquire().await.unwrap();
+    assert!(probe.is_probe());
+
+    let cancelled = {
+        let host = Arc::clone(&host);
+        tokio::spawn(async move { host.acquire_waiting().await.map(drop) })
+    };
+    let survivor = {
+        let host = Arc::clone(&host);
+        tokio::spawn(async move { host.acquire_waiting().await.map(|permit| permit.is_probe()) })
+    };
+    sleep(ms(1)).await;
+    cancelled.abort();
+    assert!(cancelled.await.unwrap_err().is_cancelled());
+
+    // Пробное возвращено без исхода: его получает оставшийся ожидающий.
+    let released = Instant::now();
+    drop(probe);
+    assert_eq!(survivor.await.unwrap(), Ok(true));
+    assert_eq!(released.elapsed(), Duration::ZERO);
+
+    // Пробное, возвращённое ожидающим, свободно для следующего запроса.
+    let again = host.acquire().await.unwrap();
+    assert!(again.is_probe());
+}
+
+/// A3: ожидающий паузу размыкания просыпается по её истечении либо
+/// раньше, если состояние breaker'а изменилось.
+#[tokio::test(start_paused = true)]
+async fn waiter_in_the_pause_wakes_at_its_end_or_on_change() {
+    let limiter = limiter(waiting_config());
+
+    // По истечении паузы: ровно 5 с, без лишних пробуждений.
+    let host = limiter.host(ip(1)).await;
+    trip_host(&host).await;
+    let started = Instant::now();
+    let probe = host.acquire_waiting().await.unwrap();
+    assert!(probe.is_probe());
+    assert_eq!(started.elapsed(), secs(5));
+    assert_eq!(host.stats().snapshot().denied, 1);
+    drop(probe);
+
+    // Раньше конца паузы: хост отключён исходом старого соединения.
+    let host = Arc::new(limiter.host(ip(2)).await);
+    let old = host.acquire().await.unwrap();
+    for _ in 0..2 {
+        let permit = host.acquire().await.unwrap();
+        assert_eq!(permit.report(Outcome::ConnectTimeout), Reaction::Slow);
+    }
+    assert_eq!(host.breaker_state(), BreakerState::Open);
+
+    let started = Instant::now();
+    let waiter = {
+        let host = Arc::clone(&host);
+        tokio::spawn(async move { host.acquire_waiting().await.map(drop) })
+    };
+    sleep(secs(1)).await;
+    assert!(!waiter.is_finished());
+    // Ни одного установленного соединения не было: отказ — закрытый порт.
+    assert_eq!(old.report(Outcome::ConnectRefused), Reaction::Keep);
+    assert_eq!(
+        waiter.await.unwrap().map_err(DisableReason::from),
+        Err(DisableReason::PortClosed)
+    );
+    assert_eq!(started.elapsed(), secs(1));
+}
+
+/// Конфигурация для тестов памяти: первый же неуспех отключает хост с
+/// причиной `blocked_or_down` (breaker без допустимых циклов).
+fn strict_config() -> LimitsConfig {
+    LimitsConfig {
+        breaker: BreakerConfig {
+            failure_threshold: 1,
+            max_cycles: 0,
+            ..BreakerConfig::default()
+        },
+        aimd: AimdConfig {
+            delay_initial: Duration::ZERO,
+            ..AimdConfig::default()
+        },
+        ..open_config()
+    }
+}
+
+/// Отключает хост: breaker исчерпал циклы.
+async fn block_host(host: &HostHandle) {
+    let permit = host.acquire().await.unwrap();
+    assert_eq!(permit.report(Outcome::Reset), Reaction::Slow);
+    assert_eq!(host.disabled(), Some(DisableReason::BlockedOrDown));
+}
+
+/// A2: следующая цель на отключённый адрес получает отказ из памяти — с той
+/// же причиной и моментом отключения; по истечении срока жизни память
+/// очищается.
+#[tokio::test(start_paused = true)]
+async fn next_target_on_a_blocked_address_is_denied_from_memory() {
+    let limiter = limiter(strict_config());
+    let host = limiter.host(ip(1)).await;
+    let blocked_at = Instant::now();
+    block_host(&host).await;
+    let observed = host.disablement().unwrap();
+    assert_eq!(observed.reason, DisableReason::BlockedOrDown);
+    assert_eq!(observed.at, blocked_at);
+    assert!(!observed.remembered);
+    drop(host);
+    assert_eq!(limiter.active_hosts(), 0);
+    assert_eq!(limiter.remembered_hosts(), 1);
+
+    sleep(secs(60)).await;
+    let next = limiter.host(ip(1)).await;
+    let expected = Disablement {
+        reason: DisableReason::BlockedOrDown,
+        at: blocked_at,
+        remembered: true,
+    };
+    assert_eq!(next.disablement(), Some(expected));
+    let started = Instant::now();
+    assert_eq!(
+        next.acquire().await.map(drop),
+        Err(Denied::Disabled(expected))
+    );
+    assert_eq!(next.acquire_waiting().await.map(drop), Err(expected));
+    assert_eq!(started.elapsed(), Duration::ZERO, "отказ без ожидания");
+    assert_eq!(limiter.connections_in_use(), 0);
+    assert!(expected_text(expected).contains("из памяти"));
+
+    // Другой адрес память не затрагивает.
+    let other = limiter.host(ip(2)).await;
+    assert_eq!(other.disabled(), None);
+    drop(other);
+    drop(next);
+
+    // Срок жизни (600 с по умолчанию) истёк: чистое состояние.
+    sleep(secs(540)).await;
+    let fresh = limiter.host(ip(1)).await;
+    assert_eq!(fresh.disabled(), None);
+    assert_eq!(fresh.breaker_state(), BreakerState::Closed);
+    assert_eq!(limiter.remembered_hosts(), 0);
+}
+
+fn expected_text(disablement: Disablement) -> String {
+    Denied::Disabled(disablement).to_string()
+}
+
+/// A2: неистёкшая пауза размыкания и счёт циклов переходят следующей цели.
+#[tokio::test(start_paused = true)]
+async fn next_target_inherits_an_unexpired_pause() {
+    let limiter = limiter(waiting_config());
+    let host = limiter.host(ip(1)).await;
+    trip_host(&host).await;
+    drop(host);
+    assert_eq!(limiter.active_hosts(), 0);
+    assert_eq!(limiter.remembered_hosts(), 1);
+
+    sleep(secs(2)).await;
+    let next = limiter.host(ip(1)).await;
+    assert_eq!(next.breaker_state(), BreakerState::Open);
+    assert_eq!(next.disabled(), None);
+    assert_eq!(next.acquire().await.map(drop), Err(Denied::Wait(secs(3))));
+
+    // Неуспех пробного даёт вторую паузу — 10 с: счёт циклов унаследован.
+    let probe = next.acquire_waiting().await.unwrap();
+    assert!(probe.is_probe());
+    assert_eq!(probe.report(Outcome::Reset), Reaction::Slow);
+    assert_eq!(next.acquire().await.map(drop), Err(Denied::Wait(secs(10))));
+    drop(next);
+
+    // Пауза истекла до следующей цели: чистое состояние.
+    sleep(secs(10)).await;
+    let fresh = limiter.host(ip(1)).await;
+    assert_eq!(fresh.breaker_state(), BreakerState::Closed);
+    assert!(!fresh.acquire().await.unwrap().is_probe());
+}
+
+/// A2: восстановившийся хост и причины уровня порта в памяти не остаются.
+#[tokio::test(start_paused = true)]
+async fn recovered_host_and_port_level_reasons_are_not_remembered() {
+    let limiter = limiter(waiting_config());
+    let host = limiter.host(ip(1)).await;
+    trip_host(&host).await;
+    assert_eq!(limiter.remembered_hosts(), 1);
+    let probe = host.acquire_waiting().await.unwrap();
+    assert_eq!(probe.report(Outcome::ConditionMet), Reaction::Recover);
+    assert_eq!(limiter.remembered_hosts(), 0);
+    drop(host);
+
+    // Закрытый порт относится к порту, а не к адресу.
+    let host = limiter.host(ip(2)).await;
+    let permit = host.acquire().await.unwrap();
+    assert_eq!(permit.report(Outcome::ConnectRefused), Reaction::Keep);
+    assert_eq!(host.disabled(), Some(DisableReason::PortClosed));
+    drop(host);
+    assert_eq!(limiter.remembered_hosts(), 0);
+    let next = limiter.host(ip(2)).await;
+    assert_eq!(next.disabled(), None);
+    assert!(next.acquire().await.is_ok());
+}
+
+/// A2: память ограничена — старые записи вытесняются.
+#[tokio::test(start_paused = true)]
+async fn memory_of_blocked_hosts_is_bounded() {
+    const CAPACITY: usize = 16;
+    const HOSTS: u8 = 200;
+
+    let limiter = limiter(LimitsConfig {
+        memory: MemoryConfig {
+            capacity: CAPACITY,
+            ..MemoryConfig::default()
+        },
+        ..strict_config()
+    });
+    for n in 1..=HOSTS {
+        let host = limiter.host(ip(n)).await;
+        block_host(&host).await;
+        drop(host);
+        assert!(limiter.remembered_hosts() <= CAPACITY);
+        assert_eq!(limiter.active_hosts(), 0);
+    }
+    assert_eq!(limiter.remembered_hosts(), CAPACITY);
+    let evicted = u64::from(HOSTS) - u64::try_from(CAPACITY).unwrap();
+    assert_eq!(limiter.memory_evictions(), evicted);
+
+    // Последний адрес ещё в памяти, первый вытеснен.
+    let last = limiter.host(ip(HOSTS)).await;
+    assert!(last.disablement().is_some_and(|found| found.remembered));
+    let first = limiter.host(ip(1)).await;
+    assert_eq!(first.disabled(), None);
+}
+
+/// A2: выключенная память — прежнее поведение, чистое состояние.
+#[tokio::test(start_paused = true)]
+async fn switched_off_memory_starts_every_target_clean() {
+    let limiter = limiter(LimitsConfig {
+        memory: MemoryConfig::DISABLED,
+        ..strict_config()
+    });
+    let host = limiter.host(ip(1)).await;
+    block_host(&host).await;
+    drop(host);
+    assert_eq!(limiter.remembered_hosts(), 0);
+
+    let next = limiter.host(ip(1)).await;
+    assert_eq!(next.disabled(), None);
+    assert!(next.acquire().await.is_ok());
 }

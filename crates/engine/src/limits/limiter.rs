@@ -57,11 +57,39 @@
 //! слоты освобождаются при drop, уже выданные токены возвращаются в bucket,
 //! пробное соединение half-open возвращается breaker'у.
 //!
+//! # Пробное соединение и ожидание breaker'а
+//!
+//! Пробное соединение half-open привязано к билету
+//! ([`ProbeTicket`](super::breaker::ProbeTicket)): вернуть его или
+//! засчитать его исход может только разрешение, которому оно выдано.
+//! Исходы остальных соединений хоста пробное не освобождают, поэтому в
+//! half-open одновременно существует не более одного пробного разрешения.
+//!
+//! [`HostHandle::acquire_waiting`] не опрашивает breaker по таймеру: у
+//! состояния хоста есть счётчик изменений (`tokio::sync::watch`), который
+//! растёт при замыкании, размыкании, отключении и возврате пробного.
+//! Ожидающий просыпается по изменению счётчика либо по истечении паузы
+//! размыкания. У каждого ожидающего свой приёмник с отметкой виденного
+//! значения, поэтому отмена одного ожидания не теряет уведомление для
+//! остальных, а изменение между отказом и началом ожидания не пропадает.
+//!
 //! # Память
 //!
 //! Состояние хоста создаётся при первом [`Limiter::host`] и удаляется,
 //! когда не осталось ни [`HostHandle`], ни разрешений этого хоста. Размер
 //! таблицы ограничен числом одновременно активных хостов.
+//!
+//! Чтобы следующая цель на тот же адрес не начинала с чистого листа,
+//! отключение хоста с причиной уровня хоста (`blocked_or_down`) и
+//! неистёкшая пауза размыкания запоминаются в ограниченной памяти
+//! ([`HostMemory`], параметры — [`LimitsConfig::memory`]). Запись делается
+//! при каждом изменении состояния breaker'а, а не при удалении состояния
+//! хоста, поэтому окна между удалением и записью нет. Новое состояние
+//! хоста создаётся из записи: отключённый хост сразу получает
+//! [`Denied::Disabled`] с той же причиной и пометкой
+//! [`Disablement::remembered`], приостановленный — [`Denied::Wait`] с
+//! остатком паузы и прежним счётом циклов. Что не запоминается и почему —
+//! в документации [`memory`](super::memory).
 //!
 //! # Защита сканирующей машины
 //!
@@ -94,6 +122,9 @@
 //!     Ok(permit) => permit,
 //!     // Breaker разомкнут: повторить не раньше чем через `_pause`.
 //!     Err(Denied::Wait(_pause)) => return,
+//!     // Пробное соединение занято другой задачей; `acquire_waiting`
+//!     // пережидает и паузу, и занятое пробное.
+//!     Err(Denied::ProbeBusy) => return,
 //!     // Хост отключён: оставшиеся проверки помечаются причиной.
 //!     Err(Denied::Disabled(_reason)) => return,
 //! };
@@ -116,14 +147,19 @@ use std::net::IpAddr;
 use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
 use std::time::Duration;
 
+use tokio::sync::watch;
 use tokio::time::Instant;
 
 use super::backoff::{Aimd, AimdConfig, Effective, Outcome};
-use super::breaker::{Breaker, BreakerConfig, BreakerState, Decision, DisableReason, Reaction};
+use super::breaker::{
+    Breaker, BreakerConfig, BreakerMemo, BreakerState, Decision, DisableReason, ProbeTicket,
+    Reaction,
+};
 use super::jitter::{Jitter, JitterRange, JitterSource, SplitMix64};
+use super::memory::{HostMemory, MemoryConfig};
 use super::semaphores::{AdjustableSemaphore, HostEntry, HostTable, SlotPermit};
 use super::stats::{LimitStats, Stage};
-use super::token_bucket::{Rate, TokenBucket};
+use super::token_bucket::{Rate, Token, TokenBucket};
 
 /// Значение лимита «без ограничения» для полей числа соединений и хостов.
 pub const UNLIMITED: usize = usize::MAX;
@@ -188,6 +224,8 @@ pub struct LimitsConfig {
     pub breaker: BreakerConfig,
     /// Параметры защиты сканирующей машины.
     pub guard: GuardConfig,
+    /// Параметры памяти об отключённых хостах.
+    pub memory: MemoryConfig,
 }
 
 impl Default for LimitsConfig {
@@ -204,6 +242,7 @@ impl Default for LimitsConfig {
             aimd: AimdConfig::default(),
             breaker: BreakerConfig::default(),
             guard: GuardConfig::default(),
+            memory: MemoryConfig::default(),
         }
     }
 }
@@ -221,21 +260,50 @@ impl LimitsConfig {
     }
 }
 
+/// Сведения об отключении хоста.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Disablement {
+    /// Причина отключения.
+    pub reason: DisableReason,
+    /// Момент отключения.
+    pub at: Instant,
+    /// Истина, если решение взято из памяти об отключённых хостах: с этой
+    /// целью соединений не было, хост отключён при работе с более ранней
+    /// целью на тот же адрес.
+    pub remembered: bool,
+}
+
+impl From<Disablement> for DisableReason {
+    fn from(disablement: Disablement) -> Self {
+        disablement.reason
+    }
+}
+
 /// Отказ в разрешении на соединение.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Denied {
-    /// Breaker хоста разомкнут либо пробное соединение занято: запрос
-    /// повторить через указанное время.
+    /// Breaker хоста разомкнут: запрос повторить через указанное время.
     Wait(Duration),
+    /// Пробное соединение half-open занято другой задачей: запрос
+    /// повторить, когда состояние breaker'а изменится.
+    /// [`HostHandle::acquire_waiting`] ждёт этого сам.
+    ProbeBusy,
     /// Работа с хостом прекращена.
-    Disabled(DisableReason),
+    Disabled(Disablement),
 }
 
 impl fmt::Display for Denied {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::Wait(pause) => write!(f, "соединения приостановлены на {pause:?}"),
-            Self::Disabled(reason) => write!(f, "хост отключён: {}", reason.label()),
+            Self::ProbeBusy => f.write_str("пробное соединение занято другой задачей"),
+            Self::Disabled(disablement) => {
+                write!(f, "хост отключён: {}", disablement.reason.label())?;
+                if disablement.remembered {
+                    f.write_str(" (решение из памяти об отключённых хостах)")?;
+                }
+                Ok(())
+            }
         }
     }
 }
@@ -244,12 +312,16 @@ impl std::error::Error for Denied {}
 
 #[derive(Debug)]
 struct GuardState {
-    /// Момент последнего уменьшения глобального лимита.
+    /// Момент последнего срабатывания защиты: уменьшения глобального
+    /// лимита либо срабатывания на нижней границе.
     last_cut: Option<Instant>,
     /// Исходов без локальной ошибки с последнего шага.
     good: u32,
-    /// Сколько раз глобальный лимит уменьшался.
+    /// Сколько раз глобальный лимит фактически уменьшался.
     cuts: u64,
+    /// Сколько раз защита сработала без эффекта: лимит уже на нижней
+    /// границе и не уменьшился.
+    floor_hits: u64,
 }
 
 #[derive(Debug)]
@@ -263,6 +335,7 @@ struct Shared {
     bucket: TokenBucket,
     jitter: Jitter,
     table: HostTable<HostState>,
+    memory: Arc<HostMemory>,
     stats: LimitStats,
     guard: Mutex<GuardState>,
 }
@@ -295,9 +368,14 @@ impl Shared {
                 .unwrap_or(floor)
                 .max(floor)
                 .min(current);
-            self.connections.set_limit(reduced);
             guard.last_cut = Some(now);
-            guard.cuts = guard.cuts.saturating_add(1);
+            if reduced < current {
+                self.connections.set_limit(reduced);
+                guard.cuts = guard.cuts.saturating_add(1);
+            } else {
+                // Лимит уже на нижней границе: срабатывание без эффекта.
+                guard.floor_hits = guard.floor_hits.saturating_add(1);
+            }
         } else if current >= self.configured_connections {
             guard.good = 0;
         } else {
@@ -317,21 +395,46 @@ impl Shared {
 struct Control {
     aimd: Aimd,
     breaker: Breaker,
+    /// Сведения об отключении, если хост отключён.
+    disablement: Option<Disablement>,
 }
 
 /// Состояние одного хоста.
 #[derive(Debug)]
 struct HostState {
+    addr: IpAddr,
     connections: AdjustableSemaphore,
     bucket: TokenBucket,
     control: Mutex<Control>,
+    /// Счётчик изменений breaker'а для ожидающих разрешения.
+    changes: watch::Sender<u64>,
+    memory: Arc<HostMemory>,
     stats: LimitStats,
 }
 
 impl HostState {
-    fn new(shared: &Shared) -> Self {
+    /// Состояние хоста `addr`: чистое либо восстановленное из памяти об
+    /// отключённых хостах.
+    fn new(shared: &Shared, addr: IpAddr) -> Self {
         let config = &shared.config;
+        let (changes, _receiver) = watch::channel(0);
+        let remembered = shared.memory.lookup(addr, Instant::now());
+        let (breaker, disablement) = match remembered {
+            Some(found) => {
+                let disablement = match found.memo {
+                    BreakerMemo::Disabled(reason) => Some(Disablement {
+                        reason,
+                        at: found.at,
+                        remembered: true,
+                    }),
+                    BreakerMemo::Open { .. } => None,
+                };
+                (Breaker::restore(config.breaker, found.memo), disablement)
+            }
+            None => (Breaker::new(config.breaker), None),
+        };
         Self {
+            addr,
             connections: AdjustableSemaphore::new(config.max_connections_per_host),
             bucket: TokenBucket::new(config.rate_per_host, config.burst_per_host),
             control: Mutex::new(Control {
@@ -340,14 +443,74 @@ impl HostState {
                     config.max_connections_per_host,
                     config.rate_per_host,
                 ),
-                breaker: Breaker::new(config.breaker),
+                breaker,
+                disablement,
             }),
+            changes,
+            memory: Arc::clone(&shared.memory),
             stats: shared.stats.child(),
         }
     }
 
     fn control(&self) -> MutexGuard<'_, Control> {
         self.control.lock().unwrap_or_else(PoisonError::into_inner)
+    }
+
+    /// Сведения об отключении для отказа с причиной `reason`.
+    fn disablement(&self, reason: DisableReason) -> Disablement {
+        // Запись появляется в `update` вместе с отключением; запасное
+        // значение нужно только типам.
+        self.control().disablement.unwrap_or(Disablement {
+            reason,
+            at: Instant::now(),
+            remembered: false,
+        })
+    }
+
+    /// Выполняет `action` под замком. Если после него изменился
+    /// [`Breaker::revision`], снимок breaker'а записывается в память об
+    /// отключённых хостах (либо запись стирается, если запоминать нечего),
+    /// а ожидающие разрешения получают уведомление — после освобождения
+    /// замка.
+    fn update<R>(&self, action: impl FnOnce(&mut Control) -> R) -> R {
+        let (result, changed) = {
+            let mut control = self.control();
+            let before = control.breaker.revision();
+            let result = action(&mut control);
+            let changed = control.breaker.revision() != before;
+            if changed {
+                let now = Instant::now();
+                if control.disablement.is_none() {
+                    control.disablement = control.breaker.disabled().map(|reason| Disablement {
+                        reason,
+                        at: now,
+                        remembered: false,
+                    });
+                }
+                // Под замком состояния: записи одного хоста попадают в
+                // память в том же порядке, в каком менялось состояние.
+                match control.breaker.memo() {
+                    Some(memo) => self.memory.remember(self.addr, memo, now),
+                    None => self.memory.forget(self.addr),
+                }
+            }
+            (result, changed)
+        };
+        if changed {
+            self.changes
+                .send_modify(|version| *version = version.wrapping_add(1));
+        }
+        result
+    }
+}
+
+/// Ждёт следующего изменения счётчика состояния хоста.
+async fn wait_for_change(changes: &mut watch::Receiver<u64>) {
+    if changes.changed().await.is_err() {
+        // Отправитель живёт в состоянии хоста, которое удерживает сам
+        // ожидающий, поэтому канал не закрывается. Ветка недостижима;
+        // вечное ожидание вместо паники.
+        std::future::pending::<()>().await;
     }
 }
 
@@ -407,11 +570,13 @@ impl Limiter {
                 bucket: TokenBucket::new(config.rate, config.burst),
                 jitter: Jitter::new(config.jitter, source),
                 table: HostTable::new(),
+                memory: Arc::new(HostMemory::new(config.memory)),
                 stats: LimitStats::new(),
                 guard: Mutex::new(GuardState {
                     last_cut: None,
                     good: 0,
                     cuts: 0,
+                    floor_hits: 0,
                 }),
             }),
         }
@@ -429,7 +594,9 @@ impl Limiter {
     pub async fn host(&self, addr: IpAddr) -> HostHandle {
         let shared = &self.shared;
         let slot = acquire_slot(&shared.hosts, &shared.stats, Stage::HostSlot).await;
-        let entry = shared.table.get_or_create(addr, || HostState::new(shared));
+        let entry = shared
+            .table
+            .get_or_create(addr, || HostState::new(shared, addr));
         HostHandle {
             session: Arc::new(Session {
                 shared: Arc::clone(shared),
@@ -480,10 +647,33 @@ impl Limiter {
         self.shared.connections.limit()
     }
 
-    /// Сколько раз защита сканирующей машины снижала глобальный лимит.
+    /// Сколько раз защита сканирующей машины фактически снизила глобальный
+    /// лимит.
     #[must_use]
     pub fn guard_cuts(&self) -> u64 {
         self.shared.guard().cuts
+    }
+
+    /// Сколько раз защита сканирующей машины сработала без эффекта: лимит
+    /// уже был на нижней границе ([`GuardConfig::min_connections`]) и не
+    /// уменьшился. Срабатывания внутри [`GuardConfig::cooldown`] не
+    /// считаются ни здесь, ни в [`Limiter::guard_cuts`].
+    #[must_use]
+    pub fn guard_floor_hits(&self) -> u64 {
+        self.shared.guard().floor_hits
+    }
+
+    /// Число адресов в памяти об отключённых хостах.
+    #[must_use]
+    pub fn remembered_hosts(&self) -> usize {
+        self.shared.memory.len()
+    }
+
+    /// Сколько записей памяти об отключённых хостах вытеснено из-за
+    /// переполнения.
+    #[must_use]
+    pub fn memory_evictions(&self) -> u64 {
+        self.shared.memory.evicted()
     }
 }
 
@@ -526,6 +716,20 @@ impl HostHandle {
         self.session.entry.control().breaker.disabled()
     }
 
+    /// Сведения об отключении, если хост отключён: причина, момент и
+    /// признак решения из памяти.
+    #[must_use]
+    pub fn disablement(&self) -> Option<Disablement> {
+        let control = self.session.entry.control();
+        control.breaker.disabled().map(|reason| {
+            control.disablement.unwrap_or(Disablement {
+                reason,
+                at: Instant::now(),
+                remembered: false,
+            })
+        })
+    }
+
     /// Разрешение на одно соединение; порядок захвата — в документации
     /// модуля. Сброс future ничего не теряет.
     ///
@@ -543,27 +747,27 @@ impl HostHandle {
         let disabled = host.control().breaker.disabled();
         if let Some(reason) = disabled {
             stats.record_denied();
-            return Err(Denied::Disabled(reason));
+            return Err(Denied::Disabled(host.disablement(reason)));
         }
 
         let host_slot = acquire_slot(&host.connections, stats, Stage::HostConnections).await;
         let mut pending = Pending {
             session: Arc::clone(session),
             host_slot: Some(host_slot),
-            host_token: false,
-            global_token: false,
-            probe: false,
+            host_token: None,
+            global_token: None,
+            probe: None,
         };
         pending.decide()?;
 
-        let waited = host.bucket.take().await;
-        pending.host_token = true;
+        let (token, waited) = host.bucket.take_token().await;
+        pending.host_token = Some(token);
         if !waited.is_zero() {
             stats.record_wait(Stage::HostRate, waited);
         }
 
-        let waited = shared.bucket.take().await;
-        pending.global_token = true;
+        let (token, waited) = shared.bucket.take_token().await;
+        pending.global_token = Some(token);
         if !waited.is_zero() {
             stats.record_wait(Stage::GlobalRate, waited);
         }
@@ -576,7 +780,11 @@ impl HostHandle {
         }
 
         let global_slot = acquire_slot(&shared.connections, stats, Stage::GlobalConnections).await;
-        if !pending.probe {
+        // Пробное с действующим билетом повторного решения не требует.
+        // Обычному захвату и пробному с устаревшим билетом (за время
+        // ожидания breaker закрылся или разомкнулся заново) оно нужно.
+        if !pending.holds_current_probe() {
+            pending.probe = None;
             pending.decide()?;
         }
 
@@ -585,18 +793,28 @@ impl HostHandle {
         Ok(pending.into_permit(global_slot, waited))
     }
 
-    /// То же, что [`HostHandle::acquire`], но паузы breaker'а пережидаются
-    /// внутри вызова.
+    /// То же, что [`HostHandle::acquire`], но пауза breaker'а и занятое
+    /// пробное соединение пережидаются внутри вызова: до изменения
+    /// состояния breaker'а либо до истечения паузы, без опроса по таймеру.
+    /// Сброс future не теряет уведомление для остальных ожидающих.
     ///
     /// # Errors
     ///
-    /// Причина отключения, если работа с хостом прекращена.
-    pub async fn acquire_waiting(&self) -> Result<Permit, DisableReason> {
+    /// Сведения об отключении, если работа с хостом прекращена.
+    pub async fn acquire_waiting(&self) -> Result<Permit, Disablement> {
+        let mut changes = self.session.entry.changes.subscribe();
         loop {
+            // Отметка до запроса: изменение, случившееся после неё, будет
+            // замечено ожиданием ниже, даже если оно произошло раньше, чем
+            // ожидание началось.
+            let _seen = *changes.borrow_and_update();
             match self.acquire().await {
                 Ok(permit) => return Ok(permit),
-                Err(Denied::Wait(pause)) => tokio::time::sleep(pause).await,
-                Err(Denied::Disabled(reason)) => return Err(reason),
+                Err(Denied::Wait(pause)) => {
+                    let _woken = tokio::time::timeout(pause, wait_for_change(&mut changes)).await;
+                }
+                Err(Denied::ProbeBusy) => wait_for_change(&mut changes).await,
+                Err(Denied::Disabled(disablement)) => return Err(disablement),
             }
         }
     }
@@ -607,41 +825,59 @@ impl HostHandle {
 struct Pending {
     session: Arc<Session>,
     host_slot: Option<SlotPermit>,
-    host_token: bool,
-    global_token: bool,
-    probe: bool,
+    /// Квитанция токена хоста, если он уже взят.
+    host_token: Option<Token>,
+    /// Квитанция глобального токена, если он уже взят.
+    global_token: Option<Token>,
+    /// Билет пробного соединения, если захват его получил.
+    probe: Option<ProbeTicket>,
 }
 
 impl Pending {
     /// Спрашивает breaker; при отказе учитывает его в счётчиках.
     fn decide(&mut self) -> Result<(), Denied> {
         let host = &self.session.entry;
-        let decision = host.control().breaker.decision(Instant::now());
+        let (decision, ticket) = host.update(|control| {
+            let decision = control.breaker.decision(Instant::now());
+            (decision, control.breaker.probe_ticket())
+        });
         match decision {
             Decision::Allowed { probe } => {
-                self.probe = probe;
+                self.probe = if probe { ticket } else { None };
                 Ok(())
             }
             Decision::Wait(pause) => {
                 host.stats.record_denied();
                 Err(Denied::Wait(pause))
             }
+            Decision::ProbeBusy => {
+                host.stats.record_denied();
+                Err(Denied::ProbeBusy)
+            }
             Decision::Disabled(reason) => {
                 host.stats.record_denied();
-                Err(Denied::Disabled(reason))
+                Err(Denied::Disabled(host.disablement(reason)))
             }
         }
     }
 
+    /// Истина, если захват держит пробное соединение и его билет ещё
+    /// действует.
+    fn holds_current_probe(&self) -> bool {
+        self.probe.is_some_and(|ticket| {
+            self.session.entry.control().breaker.probe_ticket() == Some(ticket)
+        })
+    }
+
     /// Захват завершён: всё взятое переходит разрешению.
     fn into_permit(mut self, global_slot: SlotPermit, waited: Duration) -> Permit {
-        self.host_token = false;
-        self.global_token = false;
+        self.host_token = None;
+        self.global_token = None;
         Permit {
             session: Arc::clone(&self.session),
             _host_slot: self.host_slot.take(),
             _global_slot: global_slot,
-            probe: std::mem::take(&mut self.probe),
+            probe: self.probe.take(),
             waited,
         }
     }
@@ -649,14 +885,16 @@ impl Pending {
 
 impl Drop for Pending {
     fn drop(&mut self) {
-        if self.host_token {
-            self.session.entry.bucket.refund();
+        if let Some(token) = self.host_token.take() {
+            self.session.entry.bucket.refund(token);
         }
-        if self.global_token {
-            self.session.shared.bucket.refund();
+        if let Some(token) = self.global_token.take() {
+            self.session.shared.bucket.refund(token);
         }
-        if self.probe {
-            self.session.entry.control().breaker.abandon_probe();
+        if let Some(ticket) = self.probe.take() {
+            self.session
+                .entry
+                .update(|control| control.breaker.abandon_probe(ticket));
         }
     }
 }
@@ -669,7 +907,8 @@ pub struct Permit {
     session: Arc<Session>,
     _host_slot: Option<SlotPermit>,
     _global_slot: SlotPermit,
-    probe: bool,
+    /// Билет пробного соединения half-open, если разрешение пробное.
+    probe: Option<ProbeTicket>,
     waited: Duration,
 }
 
@@ -680,10 +919,10 @@ impl Permit {
         self.session.entry.key()
     }
 
-    /// Истина для пробного соединения half-open.
+    /// Истина для разрешения, выданного как пробное соединение half-open.
     #[must_use]
     pub fn is_probe(&self) -> bool {
-        self.probe
+        self.probe.is_some()
     }
 
     /// Сколько времени прошло от запроса разрешения до выдачи.
@@ -693,17 +932,21 @@ impl Permit {
     }
 
     /// Сообщает исход соединения или обмена и освобождает слоты. Исход
-    /// учитывают breaker и AIMD хоста и глобальный контур. Разрешение,
-    /// сброшенное без этого вызова, ни на что не влияет: соединение
-    /// считается несостоявшимся.
+    /// учитывают breaker и AIMD хоста и глобальный контур. Исход пробного
+    /// разрешения решает судьбу half-open; исход обычного пробное
+    /// соединение не освобождает. Разрешение, сброшенное без этого вызова,
+    /// ни на что не влияет: соединение считается несостоявшимся.
     pub fn report(mut self, outcome: Outcome) -> Reaction {
-        // Пробное соединение завершено исходом: возвращать его не нужно.
-        self.probe = false;
+        // Пробное соединение завершается исходом: в `Drop` возвращать его
+        // уже не нужно.
+        let ticket = self.probe.take();
         let now = Instant::now();
         let host = &self.session.entry;
-        let reaction = {
-            let mut control = host.control();
-            let reaction = control.breaker.record(outcome, now);
+        let reaction = host.update(|control| {
+            let reaction = match ticket {
+                Some(ticket) => control.breaker.record_probe(ticket, outcome, now),
+                None => control.breaker.record(outcome, now),
+            };
             let effective = match reaction {
                 Reaction::Slow => Some(control.aimd.on_overload()),
                 Reaction::Recover => Some(control.aimd.on_success()),
@@ -714,7 +957,7 @@ impl Permit {
                 host.bucket.set_rate(effective.rate);
             }
             reaction
-        };
+        });
         self.session.shared.feedback(reaction, now);
         reaction
     }
@@ -722,8 +965,10 @@ impl Permit {
 
 impl Drop for Permit {
     fn drop(&mut self) {
-        if self.probe {
-            self.session.entry.control().breaker.abandon_probe();
+        if let Some(ticket) = self.probe.take() {
+            self.session
+                .entry
+                .update(|control| control.breaker.abandon_probe(ticket));
         }
     }
 }
