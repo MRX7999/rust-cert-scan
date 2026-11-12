@@ -93,9 +93,9 @@ impl ConnStats {
 
 /// Прибавляет `value` к счётчику, останавливаясь на `u64::MAX`.
 fn add_saturating(counter: &AtomicU64, value: u64) {
-    // Замыкание всегда возвращает `Some`, поэтому `fetch_update` не может
+    // Замыкание всегда возвращает `Some`, поэтому `try_update` не может
     // вернуть ошибку; результат — прежнее значение, оно не нужно.
-    let _previous = counter.fetch_update(Ordering::Relaxed, Ordering::Relaxed, |current| {
+    let _previous = counter.try_update(Ordering::Relaxed, Ordering::Relaxed, |current| {
         Some(current.saturating_add(value))
     });
 }
