@@ -324,11 +324,10 @@ impl<'a> ClientHelloView<'a> {
     /// Коды cipher suites в порядке следования.
     pub fn cipher_suites(&self) -> impl Iterator<Item = CipherSuite> + 'a {
         self.cipher_suites_raw
-            .chunks_exact(2)
-            .filter_map(|pair| match *pair {
-                [high, low] => Some(CipherSuite(u16::from_be_bytes([high, low]))),
-                _ => None,
-            })
+            .as_chunks::<2>()
+            .0
+            .iter()
+            .map(|pair| CipherSuite(u16::from_be_bytes(*pair)))
     }
 
     /// Истина, если поле расширений присутствует (в том числе пустое).

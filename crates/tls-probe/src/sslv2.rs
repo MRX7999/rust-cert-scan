@@ -170,8 +170,10 @@ fn short_body_len(first: u8, second: u8) -> usize {
 /// модуля такой список отвергают.
 fn cipher_kinds_of(specs: &[u8]) -> impl Iterator<Item = Sslv2CipherKind> + '_ {
     specs
-        .chunks_exact(CIPHER_KIND_LEN)
-        .filter_map(|chunk| <[u8; CIPHER_KIND_LEN]>::try_from(chunk).ok())
+        .as_chunks::<CIPHER_KIND_LEN>()
+        .0
+        .iter()
+        .copied()
         .map(Sslv2CipherKind::from_bytes)
 }
 
