@@ -42,8 +42,9 @@
 ## D-06. Платформы CI и релизов
 
 - Вопрос: ARCH 10.4, вопрос 6.
-- Решение: macOS arm64 (`aarch64-apple-darwin`), Linux x86_64 gnu (`x86_64-unknown-linux-gnu`) и musl (`x86_64-unknown-linux-musl`). Linux arm64 и Windows не поддерживаются.
-- Кто принял: оркестратор.
+- Решение: платформы CI — Linux x86_64 gnu (`x86_64-unknown-linux-gnu`) и musl (`x86_64-unknown-linux-musl`), Linux aarch64 gnu (`aarch64-unknown-linux-gnu`), macOS arm64 (`aarch64-apple-darwin`), Windows x86_64 msvc (`x86_64-pc-windows-msvc`). Релизные бинарники дополнительно собираются для macOS x86_64 (`x86_64-apple-darwin`).
+- Изменение 2026-11-12: первоначально Linux arm64 и Windows считались неподдерживаемыми; платформы добавлены по запросу пользователя на CI под разные ОС.
+- Кто принял: оркестратор; изменение 2026-11-12 — пользователь.
 - Разблокирует: P0-02, P4-14.
 
 ## D-07. QUIC
