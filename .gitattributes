@@ -1,0 +1,7 @@
+# Окончания строк — всегда LF (как в .editorconfig), в том числе при checkout
+# на Windows: фикстуры и снимки данных сверяются побайтно (sha256 в
+# crates/tls-data/data/SOURCES.md).
+* text=auto eol=lf
+
+# Двоичные входы фаззера
+*.bin binary
