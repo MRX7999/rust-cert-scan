@@ -86,6 +86,7 @@ The provenance table is [crates/tls-data/data/SOURCES.md](../crates/tls-data/dat
 | Why a crate is shaped this way | [ARCHITECTURE.md](ARCHITECTURE.md) (Russian) |
 | The next task and its acceptance check | [PLAN.md](PLAN.md) (Russian) |
 | A number or a naming choice | [DECISIONS.md](DECISIONS.md) (Russian) |
+| The JSON and NDJSON shape, with real scan examples | [output.md](output.md) |
 | A parser invariant | [fuzz/README.md](../fuzz/README.md) |
 | A loopback server | [tests/stands/README.md](../tests/stands/README.md) |
 | How a `.hex` fixture is recorded | [tests/fixtures/README.md](../tests/fixtures/README.md) |

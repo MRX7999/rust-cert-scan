@@ -1,0 +1,386 @@
+[
+  {
+    "id": "proto.sslv2",
+    "ip": "104.154.89.105",
+    "port": "443",
+    "severity": "OK",
+    "finding": "not offered"
+  },
+  {
+    "id": "proto.sslv3",
+    "ip": "104.154.89.105",
+    "port": "443",
+    "severity": "OK",
+    "finding": "not offered"
+  },
+  {
+    "id": "proto.tls1",
+    "ip": "104.154.89.105",
+    "port": "443",
+    "severity": "INFO",
+    "finding": "offered"
+  },
+  {
+    "id": "proto.tls1_1",
+    "ip": "104.154.89.105",
+    "port": "443",
+    "severity": "INFO",
+    "finding": "offered"
+  },
+  {
+    "id": "proto.tls1_2",
+    "ip": "104.154.89.105",
+    "port": "443",
+    "severity": "OK",
+    "finding": "offered"
+  },
+  {
+    "id": "proto.tls1_3",
+    "ip": "104.154.89.105",
+    "port": "443",
+    "severity": "OK",
+    "finding": "not offered"
+  },
+  {
+    "id": "cert_expirationStatus",
+    "ip": "104.154.89.105",
+    "port": "443",
+    "severity": "CRITICAL",
+    "finding": "not valid at validation time; notAfter 2015-04-12T23:59:59Z"
+  },
+  {
+    "id": "cert.path",
+    "ip": "104.154.89.105",
+    "port": "443",
+    "severity": "INFO",
+    "finding": "validation failed: cert is not valid at validation time"
+  },
+  {
+    "id": "heartbleed",
+    "ip": "104.154.89.105",
+    "port": "443",
+    "severity": "OK",
+    "finding": "not vulnerable",
+    "cve": "CVE-2014-0160"
+  },
+  {
+    "id": "proto.sslv2",
+    "ip": "104.154.89.105",
+    "port": "443",
+    "severity": "OK",
+    "finding": "not offered"
+  },
+  {
+    "id": "proto.sslv3",
+    "ip": "104.154.89.105",
+    "port": "443",
+    "severity": "OK",
+    "finding": "not offered"
+  },
+  {
+    "id": "proto.tls1",
+    "ip": "104.154.89.105",
+    "port": "443",
+    "severity": "INFO",
+    "finding": "offered"
+  },
+  {
+    "id": "proto.tls1_1",
+    "ip": "104.154.89.105",
+    "port": "443",
+    "severity": "INFO",
+    "finding": "offered"
+  },
+  {
+    "id": "proto.tls1_2",
+    "ip": "104.154.89.105",
+    "port": "443",
+    "severity": "OK",
+    "finding": "offered"
+  },
+  {
+    "id": "proto.tls1_3",
+    "ip": "104.154.89.105",
+    "port": "443",
+    "severity": "OK",
+    "finding": "not offered"
+  },
+  {
+    "id": "cert.not_after",
+    "ip": "104.154.89.105",
+    "port": "443",
+    "severity": "OK",
+    "finding": "notAfter 2027-11-04T21:01:33Z"
+  },
+  {
+    "id": "cert.path",
+    "ip": "104.154.89.105",
+    "port": "443",
+    "severity": "INFO",
+    "finding": "validation failed: Certificate is missing required extension"
+  },
+  {
+    "id": "heartbleed",
+    "ip": "104.154.89.105",
+    "port": "443",
+    "severity": "OK",
+    "finding": "not vulnerable",
+    "cve": "CVE-2014-0160"
+  },
+  {
+    "id": "proto.sslv2",
+    "ip": "104.154.89.105",
+    "port": "443",
+    "severity": "OK",
+    "finding": "not offered"
+  },
+  {
+    "id": "proto.sslv3",
+    "ip": "104.154.89.105",
+    "port": "443",
+    "severity": "OK",
+    "finding": "not offered"
+  },
+  {
+    "id": "proto.tls1",
+    "ip": "104.154.89.105",
+    "port": "443",
+    "severity": "INFO",
+    "finding": "offered"
+  },
+  {
+    "id": "proto.tls1_1",
+    "ip": "104.154.89.105",
+    "port": "443",
+    "severity": "INFO",
+    "finding": "offered"
+  },
+  {
+    "id": "proto.tls1_2",
+    "ip": "104.154.89.105",
+    "port": "443",
+    "severity": "OK",
+    "finding": "offered"
+  },
+  {
+    "id": "proto.tls1_3",
+    "ip": "104.154.89.105",
+    "port": "443",
+    "severity": "OK",
+    "finding": "not offered"
+  },
+  {
+    "id": "cert.not_after",
+    "ip": "104.154.89.105",
+    "port": "443",
+    "severity": "OK",
+    "finding": "notAfter 2026-02-02T20:02:53Z"
+  },
+  {
+    "id": "cert.path",
+    "ip": "104.154.89.105",
+    "port": "443",
+    "severity": "OK",
+    "finding": "succeeded against the trust stores recorded in the source file"
+  },
+  {
+    "id": "heartbleed",
+    "ip": "104.154.89.105",
+    "port": "443",
+    "severity": "OK",
+    "finding": "not vulnerable",
+    "cve": "CVE-2014-0160"
+  },
+  {
+    "id": "proto.sslv2",
+    "ip": "104.154.89.105",
+    "port": "443",
+    "severity": "OK",
+    "finding": "not offered"
+  },
+  {
+    "id": "proto.sslv3",
+    "ip": "104.154.89.105",
+    "port": "443",
+    "severity": "OK",
+    "finding": "not offered"
+  },
+  {
+    "id": "proto.tls1",
+    "ip": "104.154.89.105",
+    "port": "443",
+    "severity": "INFO",
+    "finding": "offered"
+  },
+  {
+    "id": "proto.tls1_1",
+    "ip": "104.154.89.105",
+    "port": "443",
+    "severity": "INFO",
+    "finding": "offered"
+  },
+  {
+    "id": "proto.tls1_2",
+    "ip": "104.154.89.105",
+    "port": "443",
+    "severity": "OK",
+    "finding": "offered"
+  },
+  {
+    "id": "proto.tls1_3",
+    "ip": "104.154.89.105",
+    "port": "443",
+    "severity": "OK",
+    "finding": "not offered"
+  },
+  {
+    "id": "cert.not_after",
+    "ip": "104.154.89.105",
+    "port": "443",
+    "severity": "OK",
+    "finding": "notAfter 2027-11-04T21:01:32Z"
+  },
+  {
+    "id": "cert.path",
+    "ip": "104.154.89.105",
+    "port": "443",
+    "severity": "INFO",
+    "finding": "validation failed: Certificate is missing required extension"
+  },
+  {
+    "id": "heartbleed",
+    "ip": "104.154.89.105",
+    "port": "443",
+    "severity": "OK",
+    "finding": "not vulnerable",
+    "cve": "CVE-2014-0160"
+  },
+  {
+    "id": "proto.sslv2",
+    "ip": "104.154.89.105",
+    "port": "443",
+    "severity": "OK",
+    "finding": "not offered"
+  },
+  {
+    "id": "proto.sslv3",
+    "ip": "104.154.89.105",
+    "port": "443",
+    "severity": "OK",
+    "finding": "not offered"
+  },
+  {
+    "id": "proto.tls1",
+    "ip": "104.154.89.105",
+    "port": "443",
+    "severity": "INFO",
+    "finding": "offered"
+  },
+  {
+    "id": "proto.tls1_1",
+    "ip": "104.154.89.105",
+    "port": "443",
+    "severity": "INFO",
+    "finding": "offered"
+  },
+  {
+    "id": "proto.tls1_2",
+    "ip": "104.154.89.105",
+    "port": "443",
+    "severity": "OK",
+    "finding": "offered"
+  },
+  {
+    "id": "proto.tls1_3",
+    "ip": "104.154.89.105",
+    "port": "443",
+    "severity": "OK",
+    "finding": "not offered"
+  },
+  {
+    "id": "cert.not_after",
+    "ip": "104.154.89.105",
+    "port": "443",
+    "severity": "OK",
+    "finding": "notAfter 2025-12-15T20:02:47Z"
+  },
+  {
+    "id": "cert.path",
+    "ip": "104.154.89.105",
+    "port": "443",
+    "severity": "INFO",
+    "finding": "validation failed: leaf certificate has no matching subjectAltName"
+  },
+  {
+    "id": "heartbleed",
+    "ip": "104.154.89.105",
+    "port": "443",
+    "severity": "OK",
+    "finding": "not vulnerable",
+    "cve": "CVE-2014-0160"
+  },
+  {
+    "id": "proto.sslv2",
+    "ip": "104.154.89.105",
+    "port": "1010",
+    "severity": "OK",
+    "finding": "not offered"
+  },
+  {
+    "id": "proto.sslv3",
+    "ip": "104.154.89.105",
+    "port": "1010",
+    "severity": "OK",
+    "finding": "not offered"
+  },
+  {
+    "id": "proto.tls1",
+    "ip": "104.154.89.105",
+    "port": "1010",
+    "severity": "INFO",
+    "finding": "offered"
+  },
+  {
+    "id": "proto.tls1_1",
+    "ip": "104.154.89.105",
+    "port": "1010",
+    "severity": "OK",
+    "finding": "not offered"
+  },
+  {
+    "id": "proto.tls1_2",
+    "ip": "104.154.89.105",
+    "port": "1010",
+    "severity": "OK",
+    "finding": "not offered"
+  },
+  {
+    "id": "proto.tls1_3",
+    "ip": "104.154.89.105",
+    "port": "1010",
+    "severity": "OK",
+    "finding": "not offered"
+  },
+  {
+    "id": "cert.not_after",
+    "ip": "104.154.89.105",
+    "port": "1010",
+    "severity": "OK",
+    "finding": "notAfter 2025-12-15T20:02:47Z"
+  },
+  {
+    "id": "cert.path",
+    "ip": "104.154.89.105",
+    "port": "1010",
+    "severity": "OK",
+    "finding": "succeeded against the trust stores recorded in the source file"
+  },
+  {
+    "id": "heartbleed",
+    "ip": "104.154.89.105",
+    "port": "1010",
+    "severity": "OK",
+    "finding": "not vulnerable",
+    "cve": "CVE-2014-0160"
+  }
+]

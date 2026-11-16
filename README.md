@@ -44,7 +44,7 @@ CI tests, builds a release binary, smoke-tests it and uploads an archive for eac
 
 Release profile: fat LTO, one codegen unit, `panic = abort`, symbols stripped. Archives are `tar.gz` on Unix and `zip` on Windows. Each archive contains the binary, `LICENSE`, `README.md`, `SECURITY.md` and `NOTICE-testssl.md`, plus a `.sha256` file. CI keeps artifacts for 14 days and publishes a combined `SHA256SUMS`.
 
-There is no install script and no crates.io publish (`publish = false`). Build from source, or take an archive from a [workflow run](https://github.com/MRX7999/rust-cert-scan/actions/workflows/ci.yml) or a [release](https://github.com/MRX7999/rust-cert-scan/releases) once one exists.
+There is no install script and no crates.io publish (`publish = false`). Build from source, or download an archive from the [v0.1.0 release](https://github.com/MRX7999/rust-cert-scan/releases/tag/v0.1.0). Each archive has a `.sha256` file, and the release includes `SHA256SUMS`.
 
 ## Build
 
@@ -124,6 +124,7 @@ flowchart LR
 | Document | Language | What it is |
 |---|---|---|
 | [docs/README.md](docs/README.md) | English | Status, CI artifacts, where to read next |
+| [docs/output.md](docs/output.md) | English | JSON and NDJSON, with published scan examples |
 | [SECURITY.md](SECURITY.md) | English | Authorized use and how to report a defect |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | English | Build, test and review bar |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Russian | Design record |

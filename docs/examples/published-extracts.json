@@ -1,0 +1,576 @@
+{
+  "note": "Factual extract of published SSLyze 6.2.0 JSON. Not a certscan result. Recorded 2025-11-05 against the public badssl.com testbed. Fields not present in the source file are omitted rather than filled in.",
+  "license": "Apache-2.0",
+  "copyright": "SPDX-FileCopyrightText: the secureCodeBox authors",
+  "hosts": [
+    {
+      "file": "expired.badssl.com.json",
+      "sha256": "ebdd327b89e6ae40b63b693ea22de5661a7be4749209b3d4b39283569002821f",
+      "bytes": 224627,
+      "source_url": "https://github.com/secureCodeBox/secureCodeBox/blob/main/scanners/sslyze/parser/__testFiles__/expired.badssl.com.json",
+      "raw_url": "https://raw.githubusercontent.com/secureCodeBox/secureCodeBox/main/scanners/sslyze/parser/__testFiles__/expired.badssl.com.json",
+      "sslyze_version": "6.2.0",
+      "sslyze_url": "https://github.com/nabla-c0d3/sslyze",
+      "uuid": "640d8b10-278f-497f-96eb-20072ace00bc",
+      "started_at": "2025-11-05T12:20:48.406772Z",
+      "finished_at": "2025-11-05T12:21:27.375038Z",
+      "duration_ms": 38968,
+      "host": "expired.badssl.com",
+      "ip": "104.154.89.105",
+      "port": 443,
+      "highest_tls_version": "TLS_1_2",
+      "negotiated_cipher": "ECDHE-RSA-AES128-GCM-SHA256",
+      "subject": "CN=*.badssl.com,OU=PositiveSSL Wildcard,OU=Domain Control Validated",
+      "issuer": "CN=COMODO RSA Domain Validation Secure Server CA,O=COMODO CA Limited,L=Salford,ST=Greater Manchester,C=GB",
+      "subject_equals_issuer": false,
+      "not_valid_before": "2015-04-09T00:00:00Z",
+      "not_valid_after": "2015-04-12T23:59:59Z",
+      "days_to_not_after": -3860,
+      "san_dns": [
+        "*.badssl.com",
+        "badssl.com"
+      ],
+      "serial_number": "99565320202650452861752791156765321481",
+      "fingerprint_sha256": "uhBc4CusdoiOzuR81Ot5QWU+msmTthsus9zIIBTSG08=",
+      "public_key_algorithm": "RSAPublicKey",
+      "public_key_bits": 2048,
+      "curve": null,
+      "signature_hash": "sha256",
+      "signature_algorithm": "sha256WithRSAEncryption",
+      "protocols": [
+        {
+          "id": "proto.sslv2",
+          "label": "SSLv2",
+          "offered": false,
+          "accepted_cipher_suites": 0
+        },
+        {
+          "id": "proto.sslv3",
+          "label": "SSLv3",
+          "offered": false,
+          "accepted_cipher_suites": 0
+        },
+        {
+          "id": "proto.tls1",
+          "label": "TLS 1.0",
+          "offered": true,
+          "accepted_cipher_suites": 12
+        },
+        {
+          "id": "proto.tls1_1",
+          "label": "TLS 1.1",
+          "offered": true,
+          "accepted_cipher_suites": 12
+        },
+        {
+          "id": "proto.tls1_2",
+          "label": "TLS 1.2",
+          "offered": true,
+          "accepted_cipher_suites": 24
+        },
+        {
+          "id": "proto.tls1_3",
+          "label": "TLS 1.3",
+          "offered": false,
+          "accepted_cipher_suites": 0
+        }
+      ],
+      "path_validation_ok": [],
+      "path_validation_failed": [
+        {
+          "trust_store": "Android",
+          "error": "validation failed: cert is not valid at validation time"
+        },
+        {
+          "trust_store": "Apple",
+          "error": "validation failed: cert is not valid at validation time"
+        },
+        {
+          "trust_store": "Java",
+          "error": "validation failed: cert is not valid at validation time"
+        },
+        {
+          "trust_store": "Mozilla",
+          "error": "validation failed: cert is not valid at validation time"
+        },
+        {
+          "trust_store": "Windows",
+          "error": "validation failed: cert is not valid at validation time"
+        }
+      ],
+      "verified_chain_present": false,
+      "ocsp_response_present": false,
+      "heartbleed": false,
+      "robot": "NOT_VULNERABLE_NO_ORACLE"
+    },
+    {
+      "file": "self-signed.badssl.com.json",
+      "sha256": "bee06aa8c5fc8a5f2951795e60b6688ef61706634b417042ee7b193db198ff91",
+      "bytes": 208061,
+      "source_url": "https://github.com/secureCodeBox/secureCodeBox/blob/main/scanners/sslyze/parser/__testFiles__/self-signed.badssl.com.json",
+      "raw_url": "https://raw.githubusercontent.com/secureCodeBox/secureCodeBox/main/scanners/sslyze/parser/__testFiles__/self-signed.badssl.com.json",
+      "sslyze_version": "6.2.0",
+      "sslyze_url": "https://github.com/nabla-c0d3/sslyze",
+      "uuid": "511fcb34-7652-4ba7-9190-e4d0c9404c5c",
+      "started_at": "2025-11-05T12:15:09.118027Z",
+      "finished_at": "2025-11-05T12:15:53.227240Z",
+      "duration_ms": 44109,
+      "host": "self-signed.badssl.com",
+      "ip": "104.154.89.105",
+      "port": 443,
+      "highest_tls_version": "TLS_1_2",
+      "negotiated_cipher": "ECDHE-RSA-AES128-GCM-SHA256",
+      "subject": "CN=*.badssl.com,O=BadSSL,L=San Francisco,ST=California,C=US",
+      "issuer": "CN=*.badssl.com,O=BadSSL,L=San Francisco,ST=California,C=US",
+      "subject_equals_issuer": true,
+      "not_valid_before": "2025-11-04T21:01:33Z",
+      "not_valid_after": "2027-11-04T21:01:33Z",
+      "days_to_not_after": 729,
+      "san_dns": [
+        "*.badssl.com",
+        "badssl.com"
+      ],
+      "serial_number": "11725322495043005126",
+      "fingerprint_sha256": "YvG2+LJLKcvzGL2K6YLgYAOXiWw83fjlvm9oRp65IWI=",
+      "public_key_algorithm": "RSAPublicKey",
+      "public_key_bits": 2048,
+      "curve": null,
+      "signature_hash": "sha256",
+      "signature_algorithm": "sha256WithRSAEncryption",
+      "protocols": [
+        {
+          "id": "proto.sslv2",
+          "label": "SSLv2",
+          "offered": false,
+          "accepted_cipher_suites": 0
+        },
+        {
+          "id": "proto.sslv3",
+          "label": "SSLv3",
+          "offered": false,
+          "accepted_cipher_suites": 0
+        },
+        {
+          "id": "proto.tls1",
+          "label": "TLS 1.0",
+          "offered": true,
+          "accepted_cipher_suites": 12
+        },
+        {
+          "id": "proto.tls1_1",
+          "label": "TLS 1.1",
+          "offered": true,
+          "accepted_cipher_suites": 12
+        },
+        {
+          "id": "proto.tls1_2",
+          "label": "TLS 1.2",
+          "offered": true,
+          "accepted_cipher_suites": 24
+        },
+        {
+          "id": "proto.tls1_3",
+          "label": "TLS 1.3",
+          "offered": false,
+          "accepted_cipher_suites": 0
+        }
+      ],
+      "path_validation_ok": [],
+      "path_validation_failed": [
+        {
+          "trust_store": "Android",
+          "error": "validation failed: Certificate is missing required extension"
+        },
+        {
+          "trust_store": "Apple",
+          "error": "validation failed: Certificate is missing required extension"
+        },
+        {
+          "trust_store": "Java",
+          "error": "validation failed: Certificate is missing required extension"
+        },
+        {
+          "trust_store": "Mozilla",
+          "error": "validation failed: Certificate is missing required extension"
+        },
+        {
+          "trust_store": "Windows",
+          "error": "validation failed: Certificate is missing required extension"
+        }
+      ],
+      "verified_chain_present": false,
+      "ocsp_response_present": false,
+      "heartbleed": false,
+      "robot": "NOT_VULNERABLE_NO_ORACLE"
+    },
+    {
+      "file": "revoked.badssl.com.json",
+      "sha256": "b6d4ad5cbb468b624d192a322008211b8709285f67cf11384079072d5d2c76da",
+      "bytes": 284463,
+      "source_url": "https://github.com/secureCodeBox/secureCodeBox/blob/main/scanners/sslyze/parser/__testFiles__/revoked.badssl.com.json",
+      "raw_url": "https://raw.githubusercontent.com/secureCodeBox/secureCodeBox/main/scanners/sslyze/parser/__testFiles__/revoked.badssl.com.json",
+      "sslyze_version": "6.2.0",
+      "sslyze_url": "https://github.com/nabla-c0d3/sslyze",
+      "uuid": "5dcb489a-1c42-45f4-b70b-079e6447be21",
+      "started_at": "2025-11-05T12:14:27.680887Z",
+      "finished_at": "2025-11-05T12:15:08.439123Z",
+      "duration_ms": 40758,
+      "host": "revoked.badssl.com",
+      "ip": "104.154.89.105",
+      "port": 443,
+      "highest_tls_version": "TLS_1_2",
+      "negotiated_cipher": "ECDHE-ECDSA-AES128-GCM-SHA256",
+      "subject": "CN=revoked.badssl.com",
+      "issuer": "CN=E8,O=Let's Encrypt,C=US",
+      "subject_equals_issuer": false,
+      "not_valid_before": "2025-11-04T20:02:54Z",
+      "not_valid_after": "2026-02-02T20:02:53Z",
+      "days_to_not_after": 89,
+      "san_dns": [
+        "revoked.badssl.com"
+      ],
+      "serial_number": "553368389876193304793102700940961885493048",
+      "fingerprint_sha256": "vl4Q7dCKk12I/C1QxJEliE5H457KUz3Ye4Ntu/9clO8=",
+      "public_key_algorithm": "ECPublicKey",
+      "public_key_bits": 256,
+      "curve": "secp256r1",
+      "signature_hash": "sha384",
+      "signature_algorithm": "ecdsa-with-SHA384",
+      "protocols": [
+        {
+          "id": "proto.sslv2",
+          "label": "SSLv2",
+          "offered": false,
+          "accepted_cipher_suites": 0
+        },
+        {
+          "id": "proto.sslv3",
+          "label": "SSLv3",
+          "offered": false,
+          "accepted_cipher_suites": 0
+        },
+        {
+          "id": "proto.tls1",
+          "label": "TLS 1.0",
+          "offered": true,
+          "accepted_cipher_suites": 3
+        },
+        {
+          "id": "proto.tls1_1",
+          "label": "TLS 1.1",
+          "offered": true,
+          "accepted_cipher_suites": 3
+        },
+        {
+          "id": "proto.tls1_2",
+          "label": "TLS 1.2",
+          "offered": true,
+          "accepted_cipher_suites": 7
+        },
+        {
+          "id": "proto.tls1_3",
+          "label": "TLS 1.3",
+          "offered": false,
+          "accepted_cipher_suites": 0
+        }
+      ],
+      "path_validation_ok": [
+        "Android",
+        "Apple",
+        "Java",
+        "Mozilla",
+        "Windows"
+      ],
+      "path_validation_failed": [],
+      "verified_chain_present": true,
+      "ocsp_response_present": false,
+      "heartbleed": false,
+      "robot": "NOT_VULNERABLE_RSA_NOT_SUPPORTED"
+    },
+    {
+      "file": "untrusted-root.badssl.com.json",
+      "sha256": "2680e45dc295c290609022509c95f0f79c6ea76637f7f318828985b2489f082d",
+      "bytes": 217418,
+      "source_url": "https://github.com/secureCodeBox/secureCodeBox/blob/main/scanners/sslyze/parser/__testFiles__/untrusted-root.badssl.com.json",
+      "raw_url": "https://raw.githubusercontent.com/secureCodeBox/secureCodeBox/main/scanners/sslyze/parser/__testFiles__/untrusted-root.badssl.com.json",
+      "sslyze_version": "6.2.0",
+      "sslyze_url": "https://github.com/nabla-c0d3/sslyze",
+      "uuid": "fd6f60d1-200e-4067-bfba-0c8257321133",
+      "started_at": "2025-11-05T12:16:24.176052Z",
+      "finished_at": "2025-11-05T12:16:59.568927Z",
+      "duration_ms": 35392,
+      "host": "untrusted-root.badssl.com",
+      "ip": "104.154.89.105",
+      "port": 443,
+      "highest_tls_version": "TLS_1_2",
+      "negotiated_cipher": "ECDHE-RSA-AES128-GCM-SHA256",
+      "subject": "CN=*.badssl.com,O=BadSSL,L=San Francisco,ST=California,C=US",
+      "issuer": "CN=BadSSL Untrusted Root Certificate Authority,O=BadSSL,L=San Francisco,ST=California,C=US",
+      "subject_equals_issuer": false,
+      "not_valid_before": "2025-11-04T21:01:32Z",
+      "not_valid_after": "2027-11-04T21:01:32Z",
+      "days_to_not_after": 729,
+      "san_dns": [
+        "*.badssl.com",
+        "badssl.com"
+      ],
+      "serial_number": "16269379160278429215",
+      "fingerprint_sha256": "kOF0Fd7oX7pN7VMw4oBdFWQOmAy+ey8VNRR7E0FRlnE=",
+      "public_key_algorithm": "RSAPublicKey",
+      "public_key_bits": 2048,
+      "curve": null,
+      "signature_hash": "sha256",
+      "signature_algorithm": "sha256WithRSAEncryption",
+      "protocols": [
+        {
+          "id": "proto.sslv2",
+          "label": "SSLv2",
+          "offered": false,
+          "accepted_cipher_suites": 0
+        },
+        {
+          "id": "proto.sslv3",
+          "label": "SSLv3",
+          "offered": false,
+          "accepted_cipher_suites": 0
+        },
+        {
+          "id": "proto.tls1",
+          "label": "TLS 1.0",
+          "offered": true,
+          "accepted_cipher_suites": 12
+        },
+        {
+          "id": "proto.tls1_1",
+          "label": "TLS 1.1",
+          "offered": true,
+          "accepted_cipher_suites": 12
+        },
+        {
+          "id": "proto.tls1_2",
+          "label": "TLS 1.2",
+          "offered": true,
+          "accepted_cipher_suites": 24
+        },
+        {
+          "id": "proto.tls1_3",
+          "label": "TLS 1.3",
+          "offered": false,
+          "accepted_cipher_suites": 0
+        }
+      ],
+      "path_validation_ok": [],
+      "path_validation_failed": [
+        {
+          "trust_store": "Android",
+          "error": "validation failed: Certificate is missing required extension"
+        },
+        {
+          "trust_store": "Apple",
+          "error": "validation failed: Certificate is missing required extension"
+        },
+        {
+          "trust_store": "Java",
+          "error": "validation failed: Certificate is missing required extension"
+        },
+        {
+          "trust_store": "Mozilla",
+          "error": "validation failed: Certificate is missing required extension"
+        },
+        {
+          "trust_store": "Windows",
+          "error": "validation failed: Certificate is missing required extension"
+        }
+      ],
+      "verified_chain_present": false,
+      "ocsp_response_present": false,
+      "heartbleed": false,
+      "robot": "NOT_VULNERABLE_NO_ORACLE"
+    },
+    {
+      "file": "wrong.host.badssl.com.json",
+      "sha256": "c4affbcb6a9b03f64e9686b9d810a3994439b39fe549d587d7f8263c14a1bab6",
+      "bytes": 212558,
+      "source_url": "https://github.com/secureCodeBox/secureCodeBox/blob/main/scanners/sslyze/parser/__testFiles__/wrong.host.badssl.com.json",
+      "raw_url": "https://raw.githubusercontent.com/secureCodeBox/secureCodeBox/main/scanners/sslyze/parser/__testFiles__/wrong.host.badssl.com.json",
+      "sslyze_version": "6.2.0",
+      "sslyze_url": "https://github.com/nabla-c0d3/sslyze",
+      "uuid": "b029fff8-d2ba-4f2a-925a-5b89fc525637",
+      "started_at": "2025-11-05T12:17:00.200401Z",
+      "finished_at": "2025-11-05T12:17:36.252718Z",
+      "duration_ms": 36052,
+      "host": "wrong.host.badssl.com",
+      "ip": "104.154.89.105",
+      "port": 443,
+      "highest_tls_version": "TLS_1_2",
+      "negotiated_cipher": "ECDHE-RSA-AES128-GCM-SHA256",
+      "subject": "CN=*.badssl.com",
+      "issuer": "CN=R12,O=Let's Encrypt,C=US",
+      "subject_equals_issuer": false,
+      "not_valid_before": "2025-09-16T20:02:48Z",
+      "not_valid_after": "2025-12-15T20:02:47Z",
+      "days_to_not_after": 40,
+      "san_dns": [
+        "*.badssl.com",
+        "badssl.com"
+      ],
+      "serial_number": "587838891038132569441833881597478867356239",
+      "fingerprint_sha256": "jE0ZwN/w1EXeVM9a8lEw3UncGz7ylCr3Hxn4VW6VWiw=",
+      "public_key_algorithm": "RSAPublicKey",
+      "public_key_bits": 2048,
+      "curve": null,
+      "signature_hash": "sha256",
+      "signature_algorithm": "sha256WithRSAEncryption",
+      "protocols": [
+        {
+          "id": "proto.sslv2",
+          "label": "SSLv2",
+          "offered": false,
+          "accepted_cipher_suites": 0
+        },
+        {
+          "id": "proto.sslv3",
+          "label": "SSLv3",
+          "offered": false,
+          "accepted_cipher_suites": 0
+        },
+        {
+          "id": "proto.tls1",
+          "label": "TLS 1.0",
+          "offered": true,
+          "accepted_cipher_suites": 12
+        },
+        {
+          "id": "proto.tls1_1",
+          "label": "TLS 1.1",
+          "offered": true,
+          "accepted_cipher_suites": 12
+        },
+        {
+          "id": "proto.tls1_2",
+          "label": "TLS 1.2",
+          "offered": true,
+          "accepted_cipher_suites": 24
+        },
+        {
+          "id": "proto.tls1_3",
+          "label": "TLS 1.3",
+          "offered": false,
+          "accepted_cipher_suites": 0
+        }
+      ],
+      "path_validation_ok": [],
+      "path_validation_failed": [
+        {
+          "trust_store": "Android",
+          "error": "validation failed: leaf certificate has no matching subjectAltName"
+        },
+        {
+          "trust_store": "Apple",
+          "error": "validation failed: leaf certificate has no matching subjectAltName"
+        },
+        {
+          "trust_store": "Java",
+          "error": "validation failed: leaf certificate has no matching subjectAltName"
+        },
+        {
+          "trust_store": "Mozilla",
+          "error": "validation failed: leaf certificate has no matching subjectAltName"
+        },
+        {
+          "trust_store": "Windows",
+          "error": "validation failed: leaf certificate has no matching subjectAltName"
+        }
+      ],
+      "verified_chain_present": false,
+      "ocsp_response_present": false,
+      "heartbleed": false,
+      "robot": "NOT_VULNERABLE_NO_ORACLE"
+    },
+    {
+      "file": "tls-v1-0.badssl.com_1010.json",
+      "sha256": "e2fceaf7553d64a9e19da8f5d75b63b043ca39aaa2dd7a58aecedf017e3b8ce5",
+      "bytes": 313326,
+      "source_url": "https://github.com/secureCodeBox/secureCodeBox/blob/main/scanners/sslyze/parser/__testFiles__/tls-v1-0.badssl.com_1010.json",
+      "raw_url": "https://raw.githubusercontent.com/secureCodeBox/secureCodeBox/main/scanners/sslyze/parser/__testFiles__/tls-v1-0.badssl.com_1010.json",
+      "sslyze_version": "6.2.0",
+      "sslyze_url": "https://github.com/nabla-c0d3/sslyze",
+      "uuid": "dc874de9-4fcd-4ab4-94e9-8fc2dce2ef48",
+      "started_at": "2025-11-05T12:15:53.898117Z",
+      "finished_at": "2025-11-05T12:16:23.543256Z",
+      "duration_ms": 29645,
+      "host": "tls-v1-0.badssl.com",
+      "ip": "104.154.89.105",
+      "port": 1010,
+      "highest_tls_version": "TLS_1_0",
+      "negotiated_cipher": "ECDHE-RSA-AES256-SHA",
+      "subject": "CN=*.badssl.com",
+      "issuer": "CN=R12,O=Let's Encrypt,C=US",
+      "subject_equals_issuer": false,
+      "not_valid_before": "2025-09-16T20:02:48Z",
+      "not_valid_after": "2025-12-15T20:02:47Z",
+      "days_to_not_after": 40,
+      "san_dns": [
+        "*.badssl.com",
+        "badssl.com"
+      ],
+      "serial_number": "587838891038132569441833881597478867356239",
+      "fingerprint_sha256": "jE0ZwN/w1EXeVM9a8lEw3UncGz7ylCr3Hxn4VW6VWiw=",
+      "public_key_algorithm": "RSAPublicKey",
+      "public_key_bits": 2048,
+      "curve": null,
+      "signature_hash": "sha256",
+      "signature_algorithm": "sha256WithRSAEncryption",
+      "protocols": [
+        {
+          "id": "proto.sslv2",
+          "label": "SSLv2",
+          "offered": false,
+          "accepted_cipher_suites": 0
+        },
+        {
+          "id": "proto.sslv3",
+          "label": "SSLv3",
+          "offered": false,
+          "accepted_cipher_suites": 0
+        },
+        {
+          "id": "proto.tls1",
+          "label": "TLS 1.0",
+          "offered": true,
+          "accepted_cipher_suites": 10
+        },
+        {
+          "id": "proto.tls1_1",
+          "label": "TLS 1.1",
+          "offered": false,
+          "accepted_cipher_suites": 0
+        },
+        {
+          "id": "proto.tls1_2",
+          "label": "TLS 1.2",
+          "offered": false,
+          "accepted_cipher_suites": 0
+        },
+        {
+          "id": "proto.tls1_3",
+          "label": "TLS 1.3",
+          "offered": false,
+          "accepted_cipher_suites": 0
+        }
+      ],
+      "path_validation_ok": [
+        "Android",
+        "Apple",
+        "Java",
+        "Mozilla",
+        "Windows"
+      ],
+      "path_validation_failed": [],
+      "verified_chain_present": true,
+      "ocsp_response_present": false,
+      "heartbleed": false,
+      "robot": "NOT_VULNERABLE_NO_ORACLE"
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+{"type":"scan_start","schema_version":"1.0","scan_id":"3f1c0a6e-7b24-4c1d-9a55-0b6e2f4a91d8","started_at":"2025-11-05T12:14:27Z"}
+{"type":"host","scan_id":"3f1c0a6e-7b24-4c1d-9a55-0b6e2f4a91d8","target":"expired.badssl.com:443","ip":"104.154.89.105","port":443,"status":"completed"}
+{"type":"finding","scan_id":"3f1c0a6e-7b24-4c1d-9a55-0b6e2f4a91d8","target":"expired.badssl.com:443","id":"proto.tls1","severity":"INFO","finding":"offered"}
+{"type":"finding","scan_id":"3f1c0a6e-7b24-4c1d-9a55-0b6e2f4a91d8","target":"expired.badssl.com:443","id":"proto.tls1_1","severity":"INFO","finding":"offered"}
+{"type":"finding","scan_id":"3f1c0a6e-7b24-4c1d-9a55-0b6e2f4a91d8","target":"expired.badssl.com:443","id":"cert.not_after","severity":"CRITICAL","finding":"not valid at validation time; notAfter 2015-04-12T23:59:59Z"}
+{"type":"finding","scan_id":"3f1c0a6e-7b24-4c1d-9a55-0b6e2f4a91d8","target":"expired.badssl.com:443","id":"cert.path","severity":"INFO","finding":"validation failed: cert is not valid at validation time"}
+{"type":"finding","scan_id":"3f1c0a6e-7b24-4c1d-9a55-0b6e2f4a91d8","target":"expired.badssl.com:443","id":"vuln.heartbleed","severity":"OK","finding":"not vulnerable"}
+{"type":"host","scan_id":"3f1c0a6e-7b24-4c1d-9a55-0b6e2f4a91d8","target":"self-signed.badssl.com:443","ip":"104.154.89.105","port":443,"status":"completed"}
+{"type":"finding","scan_id":"3f1c0a6e-7b24-4c1d-9a55-0b6e2f4a91d8","target":"self-signed.badssl.com:443","id":"proto.tls1","severity":"INFO","finding":"offered"}
+{"type":"finding","scan_id":"3f1c0a6e-7b24-4c1d-9a55-0b6e2f4a91d8","target":"self-signed.badssl.com:443","id":"proto.tls1_1","severity":"INFO","finding":"offered"}
+{"type":"finding","scan_id":"3f1c0a6e-7b24-4c1d-9a55-0b6e2f4a91d8","target":"self-signed.badssl.com:443","id":"cert.path","severity":"INFO","finding":"validation failed: Certificate is missing required extension"}
+{"type":"finding","scan_id":"3f1c0a6e-7b24-4c1d-9a55-0b6e2f4a91d8","target":"self-signed.badssl.com:443","id":"vuln.heartbleed","severity":"OK","finding":"not vulnerable"}
+{"type":"host","scan_id":"3f1c0a6e-7b24-4c1d-9a55-0b6e2f4a91d8","target":"revoked.badssl.com:443","ip":"104.154.89.105","port":443,"status":"completed"}
+{"type":"finding","scan_id":"3f1c0a6e-7b24-4c1d-9a55-0b6e2f4a91d8","target":"revoked.badssl.com:443","id":"proto.tls1","severity":"INFO","finding":"offered"}
+{"type":"finding","scan_id":"3f1c0a6e-7b24-4c1d-9a55-0b6e2f4a91d8","target":"revoked.badssl.com:443","id":"proto.tls1_1","severity":"INFO","finding":"offered"}
+{"type":"finding","scan_id":"3f1c0a6e-7b24-4c1d-9a55-0b6e2f4a91d8","target":"revoked.badssl.com:443","id":"vuln.heartbleed","severity":"OK","finding":"not vulnerable"}
+{"type":"host","scan_id":"3f1c0a6e-7b24-4c1d-9a55-0b6e2f4a91d8","target":"untrusted-root.badssl.com:443","ip":"104.154.89.105","port":443,"status":"completed"}
+{"type":"finding","scan_id":"3f1c0a6e-7b24-4c1d-9a55-0b6e2f4a91d8","target":"untrusted-root.badssl.com:443","id":"proto.tls1","severity":"INFO","finding":"offered"}
+{"type":"finding","scan_id":"3f1c0a6e-7b24-4c1d-9a55-0b6e2f4a91d8","target":"untrusted-root.badssl.com:443","id":"proto.tls1_1","severity":"INFO","finding":"offered"}
+{"type":"finding","scan_id":"3f1c0a6e-7b24-4c1d-9a55-0b6e2f4a91d8","target":"untrusted-root.badssl.com:443","id":"cert.path","severity":"INFO","finding":"validation failed: Certificate is missing required extension"}
+{"type":"finding","scan_id":"3f1c0a6e-7b24-4c1d-9a55-0b6e2f4a91d8","target":"untrusted-root.badssl.com:443","id":"vuln.heartbleed","severity":"OK","finding":"not vulnerable"}
+{"type":"host","scan_id":"3f1c0a6e-7b24-4c1d-9a55-0b6e2f4a91d8","target":"wrong.host.badssl.com:443","ip":"104.154.89.105","port":443,"status":"completed"}
+{"type":"finding","scan_id":"3f1c0a6e-7b24-4c1d-9a55-0b6e2f4a91d8","target":"wrong.host.badssl.com:443","id":"proto.tls1","severity":"INFO","finding":"offered"}
+{"type":"finding","scan_id":"3f1c0a6e-7b24-4c1d-9a55-0b6e2f4a91d8","target":"wrong.host.badssl.com:443","id":"proto.tls1_1","severity":"INFO","finding":"offered"}
+{"type":"finding","scan_id":"3f1c0a6e-7b24-4c1d-9a55-0b6e2f4a91d8","target":"wrong.host.badssl.com:443","id":"cert.path","severity":"INFO","finding":"validation failed: leaf certificate has no matching subjectAltName"}
+{"type":"finding","scan_id":"3f1c0a6e-7b24-4c1d-9a55-0b6e2f4a91d8","target":"wrong.host.badssl.com:443","id":"vuln.heartbleed","severity":"OK","finding":"not vulnerable"}
+{"type":"host","scan_id":"3f1c0a6e-7b24-4c1d-9a55-0b6e2f4a91d8","target":"tls-v1-0.badssl.com:1010","ip":"104.154.89.105","port":1010,"status":"completed"}
+{"type":"finding","scan_id":"3f1c0a6e-7b24-4c1d-9a55-0b6e2f4a91d8","target":"tls-v1-0.badssl.com:1010","id":"proto.tls1","severity":"INFO","finding":"offered"}
+{"type":"finding","scan_id":"3f1c0a6e-7b24-4c1d-9a55-0b6e2f4a91d8","target":"tls-v1-0.badssl.com:1010","id":"vuln.heartbleed","severity":"OK","finding":"not vulnerable"}
+{"type":"scan_end","scan_id":"3f1c0a6e-7b24-4c1d-9a55-0b6e2f4a91d8","finished_at":"2025-11-05T12:21:27Z","summary":{"targets_total":6,"targets_completed":6,"targets_failed":0,"by_severity":{"OK":38,"INFO":15,"LOW":0,"MEDIUM":0,"HIGH":0,"CRITICAL":1},"interrupted":false}}

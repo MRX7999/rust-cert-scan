@@ -1,0 +1,1069 @@
+{
+  "schema_version": "1.0",
+  "example_note": "Illustrative reading of published SSLyze JSON into the certscan schema. certscan 0.1.0 did not produce this file and does not scan.",
+  "scanner": {
+    "name": "certscan",
+    "version": "0.1.0",
+    "commit": null
+  },
+  "scan": {
+    "id": "3f1c0a6e-7b24-4c1d-9a55-0b6e2f4a91d8",
+    "started_at": "2025-11-05T12:14:27Z",
+    "finished_at": "2025-11-05T12:21:27Z",
+    "duration_ms": 419694,
+    "args": [],
+    "preset": null,
+    "profile": "docs-example",
+    "config_hash": null
+  },
+  "targets": [
+    {
+      "target": {
+        "input": "expired.badssl.com:443",
+        "host": "expired.badssl.com",
+        "ip": "104.154.89.105",
+        "ip_version": 4,
+        "port": 443,
+        "sni": "expired.badssl.com",
+        "starttls": null,
+        "proxy": null,
+        "rdns": null,
+        "service": "http"
+      },
+      "status": "completed",
+      "started_at": "2025-11-05T12:20:48.406772Z",
+      "duration_ms": 38968,
+      "source": {
+        "tool": "sslyze",
+        "version": "6.2.0",
+        "uuid": "640d8b10-278f-497f-96eb-20072ace00bc",
+        "file_sha256": "ebdd327b89e6ae40b63b693ea22de5661a7be4749209b3d4b39283569002821f",
+        "url": "https://github.com/secureCodeBox/secureCodeBox/blob/main/scanners/sslyze/parser/__testFiles__/expired.badssl.com.json"
+      },
+      "certificate": {
+        "subject": "CN=*.badssl.com,OU=PositiveSSL Wildcard,OU=Domain Control Validated",
+        "issuer": "CN=COMODO RSA Domain Validation Secure Server CA,O=COMODO CA Limited,L=Salford,ST=Greater Manchester,C=GB",
+        "san_dns": [
+          "*.badssl.com",
+          "badssl.com"
+        ],
+        "serial_number": "99565320202650452861752791156765321481",
+        "fingerprint_sha256": "uhBc4CusdoiOzuR81Ot5QWU+msmTthsus9zIIBTSG08=",
+        "public_key_algorithm": "RSAPublicKey",
+        "public_key_bits": 2048,
+        "curve": null,
+        "signature_algorithm": "sha256WithRSAEncryption",
+        "negotiated_cipher": "ECDHE-RSA-AES128-GCM-SHA256",
+        "highest_tls_version": "TLS_1_2"
+      },
+      "results": [
+        {
+          "id": "proto.sslv2",
+          "group": "protocols",
+          "title": "SSLv2",
+          "status": "ok",
+          "severity": "OK",
+          "finding": "not offered",
+          "raw": {
+            "offered": false,
+            "accepted_cipher_suites": 0
+          },
+          "error": null
+        },
+        {
+          "id": "proto.sslv3",
+          "group": "protocols",
+          "title": "SSLv3",
+          "status": "ok",
+          "severity": "OK",
+          "finding": "not offered",
+          "raw": {
+            "offered": false,
+            "accepted_cipher_suites": 0
+          },
+          "error": null
+        },
+        {
+          "id": "proto.tls1",
+          "group": "protocols",
+          "title": "TLS 1.0",
+          "status": "ok",
+          "severity": "INFO",
+          "finding": "offered",
+          "raw": {
+            "offered": true,
+            "accepted_cipher_suites": 12
+          },
+          "error": null
+        },
+        {
+          "id": "proto.tls1_1",
+          "group": "protocols",
+          "title": "TLS 1.1",
+          "status": "ok",
+          "severity": "INFO",
+          "finding": "offered",
+          "raw": {
+            "offered": true,
+            "accepted_cipher_suites": 12
+          },
+          "error": null
+        },
+        {
+          "id": "proto.tls1_2",
+          "group": "protocols",
+          "title": "TLS 1.2",
+          "status": "ok",
+          "severity": "OK",
+          "finding": "offered",
+          "raw": {
+            "offered": true,
+            "accepted_cipher_suites": 24
+          },
+          "error": null
+        },
+        {
+          "id": "proto.tls1_3",
+          "group": "protocols",
+          "title": "TLS 1.3",
+          "status": "ok",
+          "severity": "OK",
+          "finding": "not offered",
+          "raw": {
+            "offered": false,
+            "accepted_cipher_suites": 0
+          },
+          "error": null
+        },
+        {
+          "id": "cert.not_after",
+          "group": "cert",
+          "title": "Certificate validity",
+          "status": "ok",
+          "severity": "CRITICAL",
+          "finding": "not valid at validation time; notAfter 2015-04-12T23:59:59Z",
+          "raw": {
+            "not_valid_before": "2015-04-09T00:00:00Z",
+            "not_valid_after": "2015-04-12T23:59:59Z",
+            "days_from_scan_start_to_not_after": -3860
+          },
+          "error": null,
+          "testssl_id": "cert_expirationStatus"
+        },
+        {
+          "id": "cert.path",
+          "group": "cert",
+          "title": "Path validation",
+          "status": "ok",
+          "severity": "INFO",
+          "finding": "validation failed: cert is not valid at validation time",
+          "raw": {
+            "failed_trust_stores": [
+              "Android",
+              "Apple",
+              "Java",
+              "Mozilla",
+              "Windows"
+            ],
+            "errors": [
+              "validation failed: cert is not valid at validation time"
+            ],
+            "subject_equals_issuer": false
+          },
+          "error": null
+        },
+        {
+          "id": "vuln.heartbleed",
+          "group": "vulns",
+          "title": "Heartbleed",
+          "status": "ok",
+          "severity": "OK",
+          "finding": "not vulnerable",
+          "raw": {
+            "is_vulnerable_to_heartbleed": false
+          },
+          "error": null,
+          "testssl_id": "heartbleed",
+          "cve": [
+            "CVE-2014-0160"
+          ]
+        }
+      ],
+      "errors": []
+    },
+    {
+      "target": {
+        "input": "self-signed.badssl.com:443",
+        "host": "self-signed.badssl.com",
+        "ip": "104.154.89.105",
+        "ip_version": 4,
+        "port": 443,
+        "sni": "self-signed.badssl.com",
+        "starttls": null,
+        "proxy": null,
+        "rdns": null,
+        "service": "http"
+      },
+      "status": "completed",
+      "started_at": "2025-11-05T12:15:09.118027Z",
+      "duration_ms": 44109,
+      "source": {
+        "tool": "sslyze",
+        "version": "6.2.0",
+        "uuid": "511fcb34-7652-4ba7-9190-e4d0c9404c5c",
+        "file_sha256": "bee06aa8c5fc8a5f2951795e60b6688ef61706634b417042ee7b193db198ff91",
+        "url": "https://github.com/secureCodeBox/secureCodeBox/blob/main/scanners/sslyze/parser/__testFiles__/self-signed.badssl.com.json"
+      },
+      "certificate": {
+        "subject": "CN=*.badssl.com,O=BadSSL,L=San Francisco,ST=California,C=US",
+        "issuer": "CN=*.badssl.com,O=BadSSL,L=San Francisco,ST=California,C=US",
+        "san_dns": [
+          "*.badssl.com",
+          "badssl.com"
+        ],
+        "serial_number": "11725322495043005126",
+        "fingerprint_sha256": "YvG2+LJLKcvzGL2K6YLgYAOXiWw83fjlvm9oRp65IWI=",
+        "public_key_algorithm": "RSAPublicKey",
+        "public_key_bits": 2048,
+        "curve": null,
+        "signature_algorithm": "sha256WithRSAEncryption",
+        "negotiated_cipher": "ECDHE-RSA-AES128-GCM-SHA256",
+        "highest_tls_version": "TLS_1_2"
+      },
+      "results": [
+        {
+          "id": "proto.sslv2",
+          "group": "protocols",
+          "title": "SSLv2",
+          "status": "ok",
+          "severity": "OK",
+          "finding": "not offered",
+          "raw": {
+            "offered": false,
+            "accepted_cipher_suites": 0
+          },
+          "error": null
+        },
+        {
+          "id": "proto.sslv3",
+          "group": "protocols",
+          "title": "SSLv3",
+          "status": "ok",
+          "severity": "OK",
+          "finding": "not offered",
+          "raw": {
+            "offered": false,
+            "accepted_cipher_suites": 0
+          },
+          "error": null
+        },
+        {
+          "id": "proto.tls1",
+          "group": "protocols",
+          "title": "TLS 1.0",
+          "status": "ok",
+          "severity": "INFO",
+          "finding": "offered",
+          "raw": {
+            "offered": true,
+            "accepted_cipher_suites": 12
+          },
+          "error": null
+        },
+        {
+          "id": "proto.tls1_1",
+          "group": "protocols",
+          "title": "TLS 1.1",
+          "status": "ok",
+          "severity": "INFO",
+          "finding": "offered",
+          "raw": {
+            "offered": true,
+            "accepted_cipher_suites": 12
+          },
+          "error": null
+        },
+        {
+          "id": "proto.tls1_2",
+          "group": "protocols",
+          "title": "TLS 1.2",
+          "status": "ok",
+          "severity": "OK",
+          "finding": "offered",
+          "raw": {
+            "offered": true,
+            "accepted_cipher_suites": 24
+          },
+          "error": null
+        },
+        {
+          "id": "proto.tls1_3",
+          "group": "protocols",
+          "title": "TLS 1.3",
+          "status": "ok",
+          "severity": "OK",
+          "finding": "not offered",
+          "raw": {
+            "offered": false,
+            "accepted_cipher_suites": 0
+          },
+          "error": null
+        },
+        {
+          "id": "cert.not_after",
+          "group": "cert",
+          "title": "Certificate validity",
+          "status": "ok",
+          "severity": "OK",
+          "finding": "notAfter 2027-11-04T21:01:33Z",
+          "raw": {
+            "not_valid_before": "2025-11-04T21:01:33Z",
+            "not_valid_after": "2027-11-04T21:01:33Z",
+            "days_from_scan_start_to_not_after": 729
+          },
+          "error": null
+        },
+        {
+          "id": "cert.path",
+          "group": "cert",
+          "title": "Path validation",
+          "status": "ok",
+          "severity": "INFO",
+          "finding": "validation failed: Certificate is missing required extension",
+          "raw": {
+            "failed_trust_stores": [
+              "Android",
+              "Apple",
+              "Java",
+              "Mozilla",
+              "Windows"
+            ],
+            "errors": [
+              "validation failed: Certificate is missing required extension"
+            ],
+            "subject_equals_issuer": true
+          },
+          "error": null
+        },
+        {
+          "id": "vuln.heartbleed",
+          "group": "vulns",
+          "title": "Heartbleed",
+          "status": "ok",
+          "severity": "OK",
+          "finding": "not vulnerable",
+          "raw": {
+            "is_vulnerable_to_heartbleed": false
+          },
+          "error": null,
+          "testssl_id": "heartbleed",
+          "cve": [
+            "CVE-2014-0160"
+          ]
+        }
+      ],
+      "errors": []
+    },
+    {
+      "target": {
+        "input": "revoked.badssl.com:443",
+        "host": "revoked.badssl.com",
+        "ip": "104.154.89.105",
+        "ip_version": 4,
+        "port": 443,
+        "sni": "revoked.badssl.com",
+        "starttls": null,
+        "proxy": null,
+        "rdns": null,
+        "service": "http"
+      },
+      "status": "completed",
+      "started_at": "2025-11-05T12:14:27.680887Z",
+      "duration_ms": 40758,
+      "source": {
+        "tool": "sslyze",
+        "version": "6.2.0",
+        "uuid": "5dcb489a-1c42-45f4-b70b-079e6447be21",
+        "file_sha256": "b6d4ad5cbb468b624d192a322008211b8709285f67cf11384079072d5d2c76da",
+        "url": "https://github.com/secureCodeBox/secureCodeBox/blob/main/scanners/sslyze/parser/__testFiles__/revoked.badssl.com.json"
+      },
+      "certificate": {
+        "subject": "CN=revoked.badssl.com",
+        "issuer": "CN=E8,O=Let's Encrypt,C=US",
+        "san_dns": [
+          "revoked.badssl.com"
+        ],
+        "serial_number": "553368389876193304793102700940961885493048",
+        "fingerprint_sha256": "vl4Q7dCKk12I/C1QxJEliE5H457KUz3Ye4Ntu/9clO8=",
+        "public_key_algorithm": "ECPublicKey",
+        "public_key_bits": 256,
+        "curve": "secp256r1",
+        "signature_algorithm": "ecdsa-with-SHA384",
+        "negotiated_cipher": "ECDHE-ECDSA-AES128-GCM-SHA256",
+        "highest_tls_version": "TLS_1_2"
+      },
+      "results": [
+        {
+          "id": "proto.sslv2",
+          "group": "protocols",
+          "title": "SSLv2",
+          "status": "ok",
+          "severity": "OK",
+          "finding": "not offered",
+          "raw": {
+            "offered": false,
+            "accepted_cipher_suites": 0
+          },
+          "error": null
+        },
+        {
+          "id": "proto.sslv3",
+          "group": "protocols",
+          "title": "SSLv3",
+          "status": "ok",
+          "severity": "OK",
+          "finding": "not offered",
+          "raw": {
+            "offered": false,
+            "accepted_cipher_suites": 0
+          },
+          "error": null
+        },
+        {
+          "id": "proto.tls1",
+          "group": "protocols",
+          "title": "TLS 1.0",
+          "status": "ok",
+          "severity": "INFO",
+          "finding": "offered",
+          "raw": {
+            "offered": true,
+            "accepted_cipher_suites": 3
+          },
+          "error": null
+        },
+        {
+          "id": "proto.tls1_1",
+          "group": "protocols",
+          "title": "TLS 1.1",
+          "status": "ok",
+          "severity": "INFO",
+          "finding": "offered",
+          "raw": {
+            "offered": true,
+            "accepted_cipher_suites": 3
+          },
+          "error": null
+        },
+        {
+          "id": "proto.tls1_2",
+          "group": "protocols",
+          "title": "TLS 1.2",
+          "status": "ok",
+          "severity": "OK",
+          "finding": "offered",
+          "raw": {
+            "offered": true,
+            "accepted_cipher_suites": 7
+          },
+          "error": null
+        },
+        {
+          "id": "proto.tls1_3",
+          "group": "protocols",
+          "title": "TLS 1.3",
+          "status": "ok",
+          "severity": "OK",
+          "finding": "not offered",
+          "raw": {
+            "offered": false,
+            "accepted_cipher_suites": 0
+          },
+          "error": null
+        },
+        {
+          "id": "cert.not_after",
+          "group": "cert",
+          "title": "Certificate validity",
+          "status": "ok",
+          "severity": "OK",
+          "finding": "notAfter 2026-02-02T20:02:53Z",
+          "raw": {
+            "not_valid_before": "2025-11-04T20:02:54Z",
+            "not_valid_after": "2026-02-02T20:02:53Z",
+            "days_from_scan_start_to_not_after": 89
+          },
+          "error": null
+        },
+        {
+          "id": "cert.path",
+          "group": "cert",
+          "title": "Path validation",
+          "status": "ok",
+          "severity": "OK",
+          "finding": "succeeded against the trust stores recorded in the source file",
+          "raw": {
+            "ok_trust_stores": [
+              "Android",
+              "Apple",
+              "Java",
+              "Mozilla",
+              "Windows"
+            ],
+            "ocsp_response_present": false,
+            "verified_chain_present": true
+          },
+          "error": null
+        },
+        {
+          "id": "vuln.heartbleed",
+          "group": "vulns",
+          "title": "Heartbleed",
+          "status": "ok",
+          "severity": "OK",
+          "finding": "not vulnerable",
+          "raw": {
+            "is_vulnerable_to_heartbleed": false
+          },
+          "error": null,
+          "testssl_id": "heartbleed",
+          "cve": [
+            "CVE-2014-0160"
+          ]
+        }
+      ],
+      "errors": []
+    },
+    {
+      "target": {
+        "input": "untrusted-root.badssl.com:443",
+        "host": "untrusted-root.badssl.com",
+        "ip": "104.154.89.105",
+        "ip_version": 4,
+        "port": 443,
+        "sni": "untrusted-root.badssl.com",
+        "starttls": null,
+        "proxy": null,
+        "rdns": null,
+        "service": "http"
+      },
+      "status": "completed",
+      "started_at": "2025-11-05T12:16:24.176052Z",
+      "duration_ms": 35392,
+      "source": {
+        "tool": "sslyze",
+        "version": "6.2.0",
+        "uuid": "fd6f60d1-200e-4067-bfba-0c8257321133",
+        "file_sha256": "2680e45dc295c290609022509c95f0f79c6ea76637f7f318828985b2489f082d",
+        "url": "https://github.com/secureCodeBox/secureCodeBox/blob/main/scanners/sslyze/parser/__testFiles__/untrusted-root.badssl.com.json"
+      },
+      "certificate": {
+        "subject": "CN=*.badssl.com,O=BadSSL,L=San Francisco,ST=California,C=US",
+        "issuer": "CN=BadSSL Untrusted Root Certificate Authority,O=BadSSL,L=San Francisco,ST=California,C=US",
+        "san_dns": [
+          "*.badssl.com",
+          "badssl.com"
+        ],
+        "serial_number": "16269379160278429215",
+        "fingerprint_sha256": "kOF0Fd7oX7pN7VMw4oBdFWQOmAy+ey8VNRR7E0FRlnE=",
+        "public_key_algorithm": "RSAPublicKey",
+        "public_key_bits": 2048,
+        "curve": null,
+        "signature_algorithm": "sha256WithRSAEncryption",
+        "negotiated_cipher": "ECDHE-RSA-AES128-GCM-SHA256",
+        "highest_tls_version": "TLS_1_2"
+      },
+      "results": [
+        {
+          "id": "proto.sslv2",
+          "group": "protocols",
+          "title": "SSLv2",
+          "status": "ok",
+          "severity": "OK",
+          "finding": "not offered",
+          "raw": {
+            "offered": false,
+            "accepted_cipher_suites": 0
+          },
+          "error": null
+        },
+        {
+          "id": "proto.sslv3",
+          "group": "protocols",
+          "title": "SSLv3",
+          "status": "ok",
+          "severity": "OK",
+          "finding": "not offered",
+          "raw": {
+            "offered": false,
+            "accepted_cipher_suites": 0
+          },
+          "error": null
+        },
+        {
+          "id": "proto.tls1",
+          "group": "protocols",
+          "title": "TLS 1.0",
+          "status": "ok",
+          "severity": "INFO",
+          "finding": "offered",
+          "raw": {
+            "offered": true,
+            "accepted_cipher_suites": 12
+          },
+          "error": null
+        },
+        {
+          "id": "proto.tls1_1",
+          "group": "protocols",
+          "title": "TLS 1.1",
+          "status": "ok",
+          "severity": "INFO",
+          "finding": "offered",
+          "raw": {
+            "offered": true,
+            "accepted_cipher_suites": 12
+          },
+          "error": null
+        },
+        {
+          "id": "proto.tls1_2",
+          "group": "protocols",
+          "title": "TLS 1.2",
+          "status": "ok",
+          "severity": "OK",
+          "finding": "offered",
+          "raw": {
+            "offered": true,
+            "accepted_cipher_suites": 24
+          },
+          "error": null
+        },
+        {
+          "id": "proto.tls1_3",
+          "group": "protocols",
+          "title": "TLS 1.3",
+          "status": "ok",
+          "severity": "OK",
+          "finding": "not offered",
+          "raw": {
+            "offered": false,
+            "accepted_cipher_suites": 0
+          },
+          "error": null
+        },
+        {
+          "id": "cert.not_after",
+          "group": "cert",
+          "title": "Certificate validity",
+          "status": "ok",
+          "severity": "OK",
+          "finding": "notAfter 2027-11-04T21:01:32Z",
+          "raw": {
+            "not_valid_before": "2025-11-04T21:01:32Z",
+            "not_valid_after": "2027-11-04T21:01:32Z",
+            "days_from_scan_start_to_not_after": 729
+          },
+          "error": null
+        },
+        {
+          "id": "cert.path",
+          "group": "cert",
+          "title": "Path validation",
+          "status": "ok",
+          "severity": "INFO",
+          "finding": "validation failed: Certificate is missing required extension",
+          "raw": {
+            "failed_trust_stores": [
+              "Android",
+              "Apple",
+              "Java",
+              "Mozilla",
+              "Windows"
+            ],
+            "errors": [
+              "validation failed: Certificate is missing required extension"
+            ],
+            "subject_equals_issuer": false
+          },
+          "error": null
+        },
+        {
+          "id": "vuln.heartbleed",
+          "group": "vulns",
+          "title": "Heartbleed",
+          "status": "ok",
+          "severity": "OK",
+          "finding": "not vulnerable",
+          "raw": {
+            "is_vulnerable_to_heartbleed": false
+          },
+          "error": null,
+          "testssl_id": "heartbleed",
+          "cve": [
+            "CVE-2014-0160"
+          ]
+        }
+      ],
+      "errors": []
+    },
+    {
+      "target": {
+        "input": "wrong.host.badssl.com:443",
+        "host": "wrong.host.badssl.com",
+        "ip": "104.154.89.105",
+        "ip_version": 4,
+        "port": 443,
+        "sni": "wrong.host.badssl.com",
+        "starttls": null,
+        "proxy": null,
+        "rdns": null,
+        "service": "http"
+      },
+      "status": "completed",
+      "started_at": "2025-11-05T12:17:00.200401Z",
+      "duration_ms": 36052,
+      "source": {
+        "tool": "sslyze",
+        "version": "6.2.0",
+        "uuid": "b029fff8-d2ba-4f2a-925a-5b89fc525637",
+        "file_sha256": "c4affbcb6a9b03f64e9686b9d810a3994439b39fe549d587d7f8263c14a1bab6",
+        "url": "https://github.com/secureCodeBox/secureCodeBox/blob/main/scanners/sslyze/parser/__testFiles__/wrong.host.badssl.com.json"
+      },
+      "certificate": {
+        "subject": "CN=*.badssl.com",
+        "issuer": "CN=R12,O=Let's Encrypt,C=US",
+        "san_dns": [
+          "*.badssl.com",
+          "badssl.com"
+        ],
+        "serial_number": "587838891038132569441833881597478867356239",
+        "fingerprint_sha256": "jE0ZwN/w1EXeVM9a8lEw3UncGz7ylCr3Hxn4VW6VWiw=",
+        "public_key_algorithm": "RSAPublicKey",
+        "public_key_bits": 2048,
+        "curve": null,
+        "signature_algorithm": "sha256WithRSAEncryption",
+        "negotiated_cipher": "ECDHE-RSA-AES128-GCM-SHA256",
+        "highest_tls_version": "TLS_1_2"
+      },
+      "results": [
+        {
+          "id": "proto.sslv2",
+          "group": "protocols",
+          "title": "SSLv2",
+          "status": "ok",
+          "severity": "OK",
+          "finding": "not offered",
+          "raw": {
+            "offered": false,
+            "accepted_cipher_suites": 0
+          },
+          "error": null
+        },
+        {
+          "id": "proto.sslv3",
+          "group": "protocols",
+          "title": "SSLv3",
+          "status": "ok",
+          "severity": "OK",
+          "finding": "not offered",
+          "raw": {
+            "offered": false,
+            "accepted_cipher_suites": 0
+          },
+          "error": null
+        },
+        {
+          "id": "proto.tls1",
+          "group": "protocols",
+          "title": "TLS 1.0",
+          "status": "ok",
+          "severity": "INFO",
+          "finding": "offered",
+          "raw": {
+            "offered": true,
+            "accepted_cipher_suites": 12
+          },
+          "error": null
+        },
+        {
+          "id": "proto.tls1_1",
+          "group": "protocols",
+          "title": "TLS 1.1",
+          "status": "ok",
+          "severity": "INFO",
+          "finding": "offered",
+          "raw": {
+            "offered": true,
+            "accepted_cipher_suites": 12
+          },
+          "error": null
+        },
+        {
+          "id": "proto.tls1_2",
+          "group": "protocols",
+          "title": "TLS 1.2",
+          "status": "ok",
+          "severity": "OK",
+          "finding": "offered",
+          "raw": {
+            "offered": true,
+            "accepted_cipher_suites": 24
+          },
+          "error": null
+        },
+        {
+          "id": "proto.tls1_3",
+          "group": "protocols",
+          "title": "TLS 1.3",
+          "status": "ok",
+          "severity": "OK",
+          "finding": "not offered",
+          "raw": {
+            "offered": false,
+            "accepted_cipher_suites": 0
+          },
+          "error": null
+        },
+        {
+          "id": "cert.not_after",
+          "group": "cert",
+          "title": "Certificate validity",
+          "status": "ok",
+          "severity": "OK",
+          "finding": "notAfter 2025-12-15T20:02:47Z",
+          "raw": {
+            "not_valid_before": "2025-09-16T20:02:48Z",
+            "not_valid_after": "2025-12-15T20:02:47Z",
+            "days_from_scan_start_to_not_after": 40
+          },
+          "error": null
+        },
+        {
+          "id": "cert.path",
+          "group": "cert",
+          "title": "Path validation",
+          "status": "ok",
+          "severity": "INFO",
+          "finding": "validation failed: leaf certificate has no matching subjectAltName",
+          "raw": {
+            "failed_trust_stores": [
+              "Android",
+              "Apple",
+              "Java",
+              "Mozilla",
+              "Windows"
+            ],
+            "errors": [
+              "validation failed: leaf certificate has no matching subjectAltName"
+            ],
+            "subject_equals_issuer": false
+          },
+          "error": null
+        },
+        {
+          "id": "vuln.heartbleed",
+          "group": "vulns",
+          "title": "Heartbleed",
+          "status": "ok",
+          "severity": "OK",
+          "finding": "not vulnerable",
+          "raw": {
+            "is_vulnerable_to_heartbleed": false
+          },
+          "error": null,
+          "testssl_id": "heartbleed",
+          "cve": [
+            "CVE-2014-0160"
+          ]
+        }
+      ],
+      "errors": []
+    },
+    {
+      "target": {
+        "input": "tls-v1-0.badssl.com:1010",
+        "host": "tls-v1-0.badssl.com",
+        "ip": "104.154.89.105",
+        "ip_version": 4,
+        "port": 1010,
+        "sni": "tls-v1-0.badssl.com",
+        "starttls": null,
+        "proxy": null,
+        "rdns": null,
+        "service": "http"
+      },
+      "status": "completed",
+      "started_at": "2025-11-05T12:15:53.898117Z",
+      "duration_ms": 29645,
+      "source": {
+        "tool": "sslyze",
+        "version": "6.2.0",
+        "uuid": "dc874de9-4fcd-4ab4-94e9-8fc2dce2ef48",
+        "file_sha256": "e2fceaf7553d64a9e19da8f5d75b63b043ca39aaa2dd7a58aecedf017e3b8ce5",
+        "url": "https://github.com/secureCodeBox/secureCodeBox/blob/main/scanners/sslyze/parser/__testFiles__/tls-v1-0.badssl.com_1010.json"
+      },
+      "certificate": {
+        "subject": "CN=*.badssl.com",
+        "issuer": "CN=R12,O=Let's Encrypt,C=US",
+        "san_dns": [
+          "*.badssl.com",
+          "badssl.com"
+        ],
+        "serial_number": "587838891038132569441833881597478867356239",
+        "fingerprint_sha256": "jE0ZwN/w1EXeVM9a8lEw3UncGz7ylCr3Hxn4VW6VWiw=",
+        "public_key_algorithm": "RSAPublicKey",
+        "public_key_bits": 2048,
+        "curve": null,
+        "signature_algorithm": "sha256WithRSAEncryption",
+        "negotiated_cipher": "ECDHE-RSA-AES256-SHA",
+        "highest_tls_version": "TLS_1_0"
+      },
+      "results": [
+        {
+          "id": "proto.sslv2",
+          "group": "protocols",
+          "title": "SSLv2",
+          "status": "ok",
+          "severity": "OK",
+          "finding": "not offered",
+          "raw": {
+            "offered": false,
+            "accepted_cipher_suites": 0
+          },
+          "error": null
+        },
+        {
+          "id": "proto.sslv3",
+          "group": "protocols",
+          "title": "SSLv3",
+          "status": "ok",
+          "severity": "OK",
+          "finding": "not offered",
+          "raw": {
+            "offered": false,
+            "accepted_cipher_suites": 0
+          },
+          "error": null
+        },
+        {
+          "id": "proto.tls1",
+          "group": "protocols",
+          "title": "TLS 1.0",
+          "status": "ok",
+          "severity": "INFO",
+          "finding": "offered",
+          "raw": {
+            "offered": true,
+            "accepted_cipher_suites": 10
+          },
+          "error": null
+        },
+        {
+          "id": "proto.tls1_1",
+          "group": "protocols",
+          "title": "TLS 1.1",
+          "status": "ok",
+          "severity": "OK",
+          "finding": "not offered",
+          "raw": {
+            "offered": false,
+            "accepted_cipher_suites": 0
+          },
+          "error": null
+        },
+        {
+          "id": "proto.tls1_2",
+          "group": "protocols",
+          "title": "TLS 1.2",
+          "status": "ok",
+          "severity": "OK",
+          "finding": "not offered",
+          "raw": {
+            "offered": false,
+            "accepted_cipher_suites": 0
+          },
+          "error": null
+        },
+        {
+          "id": "proto.tls1_3",
+          "group": "protocols",
+          "title": "TLS 1.3",
+          "status": "ok",
+          "severity": "OK",
+          "finding": "not offered",
+          "raw": {
+            "offered": false,
+            "accepted_cipher_suites": 0
+          },
+          "error": null
+        },
+        {
+          "id": "cert.not_after",
+          "group": "cert",
+          "title": "Certificate validity",
+          "status": "ok",
+          "severity": "OK",
+          "finding": "notAfter 2025-12-15T20:02:47Z",
+          "raw": {
+            "not_valid_before": "2025-09-16T20:02:48Z",
+            "not_valid_after": "2025-12-15T20:02:47Z",
+            "days_from_scan_start_to_not_after": 40
+          },
+          "error": null
+        },
+        {
+          "id": "cert.path",
+          "group": "cert",
+          "title": "Path validation",
+          "status": "ok",
+          "severity": "OK",
+          "finding": "succeeded against the trust stores recorded in the source file",
+          "raw": {
+            "ok_trust_stores": [
+              "Android",
+              "Apple",
+              "Java",
+              "Mozilla",
+              "Windows"
+            ],
+            "ocsp_response_present": false,
+            "verified_chain_present": true
+          },
+          "error": null
+        },
+        {
+          "id": "vuln.heartbleed",
+          "group": "vulns",
+          "title": "Heartbleed",
+          "status": "ok",
+          "severity": "OK",
+          "finding": "not vulnerable",
+          "raw": {
+            "is_vulnerable_to_heartbleed": false
+          },
+          "error": null,
+          "testssl_id": "heartbleed",
+          "cve": [
+            "CVE-2014-0160"
+          ]
+        }
+      ],
+      "errors": []
+    }
+  ],
+  "summary": {
+    "targets_total": 6,
+    "targets_completed": 6,
+    "targets_failed": 0,
+    "by_severity": {
+      "OK": 38,
+      "INFO": 15,
+      "LOW": 0,
+      "MEDIUM": 0,
+      "HIGH": 0,
+      "CRITICAL": 1
+    },
+    "interrupted": false
+  }
+}
