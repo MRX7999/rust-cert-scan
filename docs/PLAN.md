@@ -1,5 +1,7 @@
 # Rust-Cert-Scan: план реализации
 
+> English status and repository guide: [README.md](README.md). This plan is maintained in Russian.
+
 План опирается на `docs/ARCHITECTURE.md` (далее — ARCH). Каждая задача рассчитана на одного исполнителя в режиме code и не требует знания соседних задач сверх указанных зависимостей.
 
 Соглашения:

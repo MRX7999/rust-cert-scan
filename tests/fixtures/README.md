@@ -1,129 +1,129 @@
-# Формат байтовых фикстур
+# Byte fixture format
 
-Фикстура — записанные байты одного направления обмена (отправленный ClientHello или ответ сервера) и описание их происхождения. На фикстурах тестируются парсеры и билдеры без сети (`docs/ARCHITECTURE.md`, раздел 9).
+A fixture is the recorded bytes of one direction of an exchange (a ClientHello that was sent, or a server reply) plus a description of where those bytes came from. Parsers and builders are tested on fixtures without a network (`docs/ARCHITECTURE.md`, section 9).
 
-Фикстуры записаны: в `crates/tls-probe/tests/fixtures/` лежат пары `.hex` + `.meta.toml`, снятые подкомандой `cargo xtask record-fixture` со стенда `openssl-basic` (`tests/stands/README.md`). Их читают тесты `crates/tls-probe/src/fixture_tests.rs`. Новые фикстуры добавляются той же подкомандой вместе с парсерами, которые их разбирают.
+Recorded fixtures live in `crates/tls-probe/tests/fixtures/` as `.hex` + `.meta.toml` pairs, captured by `cargo xtask record-fixture` from the `openssl-basic` stand (`tests/stands/README.md`). Tests in `crates/tls-probe/src/fixture_tests.rs` read them. New fixtures are added with the same subcommand, together with the parser that consumes them.
 
-## Где лежат
+## Where they live
 
-| Каталог | Что хранится |
+| Directory | What is stored |
 |---|---|
-| `crates/<крейт>/tests/fixtures/` | фикстуры unit-тестов конкретного крейта, например `crates/tls-probe/tests/fixtures/` |
-| `tests/fixtures/` | фикстуры, общие для нескольких крейтов и интеграционных тестов |
+| `crates/<crate>/tests/fixtures/` | fixtures for that crate's unit tests, for example `crates/tls-probe/tests/fixtures/` |
+| `tests/fixtures/` | fixtures shared by more than one crate or by integration tests |
 
-Формат в обоих местах один.
+The format is the same in both places.
 
-## Состав
+## Pair
 
-Фикстура — пара файлов с общим именем:
+A fixture is two files with the same stem:
 
 ```text
-<имя>.hex         байты
-<имя>.meta.toml   метаданные
+<name>.hex         bytes
+<name>.meta.toml   metadata
 ```
 
-Имя: строчные латинские буквы, цифры и дефис, по схеме `<протокол>-<сообщение>-<источник>[-<особенность>]`, например `tls13-serverhello-openssl-basic` или `tls12-alert-openssl-basic-no-shared-cipher`.
+The name is lowercase ASCII letters, digits and hyphens, shaped `<protocol>-<message>-<source>[-<qualifier>]`. Examples: `tls13-serverhello-openssl-basic`, `tls12-alert-openssl-basic-no-shared-cipher`.
 
-Обмен «запрос — ответ» хранится двумя фикстурами: отправленный ClientHello (`direction = "client"`, например `tls13-clienthello-openssl-basic`) и ответ сервера (`direction = "server"`), который ссылается на запрос полем `request`.
+A request/response exchange is two fixtures: the ClientHello that was sent (`direction = "client"`, for example `tls13-clienthello-openssl-basic`) and the server reply (`direction = "server"`), which points at the request with `request`.
 
-Обмен с HelloRetryRequest хранится четырьмя фикстурами: первый ClientHello, ответ на него (HRR и следующий за ним ChangeCipherSpec), второй ClientHello и полный поток сервера. Полный поток ссылается на первый запрос полем `request`, на второй — полем `second_request`, а `second_request_offset` указывает, сколько байтов потока сервер передал до второго ClientHello.
+A HelloRetryRequest exchange is four fixtures: the first ClientHello, the reply to it (HRR and the ChangeCipherSpec that follows), the second ClientHello, and the full server stream. The full stream points at the first request with `request`, at the second with `second_request`, and `second_request_offset` is how many bytes of the server stream were sent before the second ClientHello.
 
-Синтетическая фикстура (байты составлены вручную, а не сняты с сервера) в сегменте `<источник>` имеет слово `synthetic`, например `tls12-serverhello-synthetic-truncated`, и `[source].kind = "synthetic"` в метаданных. Выдавать синтетические байты за запись реального сервера нельзя.
+A synthetic fixture (bytes written by hand, not captured from a server) has the word `synthetic` in the `<source>` segment, for example `tls12-serverhello-synthetic-truncated`, and `[source].kind = "synthetic"` in the metadata. Synthetic bytes must not be presented as a recording of a real server.
 
-## Файл `.hex`
+## `.hex` file
 
-- Байты в том виде и порядке, в каком они переданы по TCP-соединению, начиная с первого байта направления (ответа сервера или отправленного ClientHello). Одна фикстура — одно направление.
-- Шестнадцатеричные цифры в нижнем регистре, по 16 байт в строке, байты разделены пробелом.
-- Пробелы и переводы строк при чтении игнорируются.
-- Строка, начинающаяся с `#`, — комментарий. Комментарии в конце строки с данными не допускаются.
-- Байты записываются инструментом с реального сервера и вручную не редактируются. Если нужен намеренно повреждённый вход, он оформляется отдельной фикстурой, а в метаданных указываются исходная фикстура и внесённое изменение (`derived_from`, `mutation`). Исключение — синтетические фикстуры: их байты составляются вручную, а первая строка файла — комментарий `# SYNTHETIC: составлено вручную, не запись сервера`.
+- Bytes in the order they were sent on the TCP connection, starting at the first byte of that direction (the server reply, or the ClientHello that was sent). One fixture is one direction.
+- Lowercase hexadecimal, 16 bytes per line, bytes separated by a space.
+- Spaces and newlines are ignored on read.
+- A line that starts with `#` is a comment. A comment at the end of a data line is not allowed.
+- Bytes are written by the tool from a real server and are not edited by hand. A deliberately damaged input is a separate fixture, and the metadata names the source fixture and the change (`derived_from`, `mutation`). Exception: synthetic fixtures. Their bytes are written by hand, and the first line is the comment `# SYNTHETIC: composed by hand, not a server recording`.
 
-## Файл `.meta.toml`
+## `.meta.toml`
 
-| Поле | Обязательное | Содержимое |
+| Field | Required | Contents |
 |---|---|---|
-| `format` | да | версия формата метаданных, сейчас `1` |
-| `description` | да | что записано, одной строкой |
-| `direction` | да | `"server"` (ответ сервера) или `"client"` (отправленный ClientHello) |
-| `request` | нет | для `direction = "server"`: имя фикстуры с отправленным ClientHello, на который получен этот ответ |
-| `second_request` | нет | для `direction = "server"` в обмене с HelloRetryRequest: имя фикстуры со вторым ClientHello, отправленным в том же соединении |
-| `second_request_offset` | вместе с `second_request` | число байтов этой фикстуры, переданных сервером до второго ClientHello (целое число, не строка); байты с этого смещения — ответ на второй запрос |
-| `length` | да | число байт в `.hex`, для проверки целостности |
-| `derived_from` | нет | имя исходной фикстуры, если байты изменены намеренно |
-| `mutation` | нет | описание внесённого изменения |
-| `[source].kind` | да | `"stand"` (локальный стенд), `"fuzz"` (вход из `fuzz/artifacts/`) или `"synthetic"` (байты составлены вручную) |
-| `[source].stand` | для `stand` | имя стенда из `tests/stands/` |
-| `[source].server` | для `stand` | продукт и версия сервера, вывод `openssl version` или аналог |
-| `[source].server_command` | для `stand` | команда запуска сервера |
-| `[source].capture_command` | да | команда, которой сняты байты; для `synthetic` — описание того, как байты составлены |
-| `[source].date` | да | дата записи, `ГГГГ-ММ-ДД` |
-| `[source.conditions]` | нет | условия записи в виде «ключ = значение»: параметры варианта стенда и свойства потока, проверенные при записи. Сейчас используются `max_send_frag = "512"` и `handshake_message_spans_records = "true"` (вариант с фрагментацией), `key_type = "rsa"` и `cipher = "DHE-RSA-AES256-GCM-SHA384"` (вариант с RSA-сертификатом и DHE-RSA). Это не ожидаемый результат разбора, поэтому в `[expected.fields]` такие ключи не пишутся |
-| `[expected].outcome` | да | `"ok"` (разбор успешен) или `"error"` (парсер обязан вернуть ошибку) |
-| `[expected].exchange` | для `direction = "server"` из `record-fixture` | код итога обмена, на котором остановлена запись: `server_hello_done`, `alert`, `encrypted` (первая зашифрованная запись, в фикстуру не вошла), `retry_complete` (HRR, второй ServerHello и первая зашифрованная запись); при записи с `--force` возможны также `timeout`, `closed`, `too_large`, `parse_error` |
-| `[expected].summary` | да | ожидаемый результат разбора словами |
-| `[expected.fields]` | нет | ожидаемые значения полей в виде «ключ = значение»; набор ключей определяет тест, который читает фикстуру |
+| `format` | yes | metadata format version, currently `1` |
+| `description` | yes | what was recorded, one line |
+| `direction` | yes | `"server"` (server reply) or `"client"` (ClientHello that was sent) |
+| `request` | no | for `direction = "server"`: name of the fixture that holds the ClientHello this reply answers |
+| `second_request` | no | for `direction = "server"` in a HelloRetryRequest exchange: name of the fixture that holds the second ClientHello sent on the same connection |
+| `second_request_offset` | with `second_request` | number of bytes of this fixture the server sent before the second ClientHello (an integer, not a string); bytes from that offset are the reply to the second request |
+| `length` | yes | number of bytes in the `.hex`, for an integrity check |
+| `derived_from` | no | name of the source fixture, if the bytes were changed on purpose |
+| `mutation` | no | description of that change |
+| `[source].kind` | yes | `"stand"` (local stand), `"fuzz"` (an input from `fuzz/artifacts/`) or `"synthetic"` (bytes composed by hand) |
+| `[source].stand` | for `stand` | stand name from `tests/stands/` |
+| `[source].server` | for `stand` | product and version, the output of `openssl version` or the equivalent |
+| `[source].server_command` | for `stand` | command that started the server |
+| `[source].capture_command` | yes | command that captured the bytes; for `synthetic`, a description of how the bytes were composed |
+| `[source].date` | yes | capture date, `YYYY-MM-DD` |
+| `[source.conditions]` | no | capture conditions as key = value: variant parameters and stream properties checked at capture time. Used today: `max_send_frag = "512"` and `handshake_message_spans_records = "true"` (fragmentation variant), `key_type = "rsa"` and `cipher = "DHE-RSA-AES256-GCM-SHA384"` (RSA certificate and DHE-RSA variant). These are not an expected parse result, so they are not written under `[expected.fields]` |
+| `[expected].outcome` | yes | `"ok"` (parse succeeds) or `"error"` (the parser must return an error) |
+| `[expected].exchange` | for `direction = "server"` from `record-fixture` | exchange result at which capture stopped: `server_hello_done`, `alert`, `encrypted` (first encrypted record, not included in the fixture), `retry_complete` (HRR, second ServerHello and the first encrypted record). A capture with `--force` may also record `timeout`, `closed`, `too_large`, `parse_error` |
+| `[expected].summary` | yes | expected parse result, in words |
+| `[expected.fields]` | no | expected field values as key = value; the test that reads the fixture decides the key set |
 
-Шаблон (значения в угловых скобках заполняются при записи; строки, помеченные комментарием, есть не у каждой фикстуры):
+Template. Values in angle brackets are filled at capture time. Commented lines are not present on every fixture.
 
 ```toml
 format = 1
-description = "<что записано>"
+description = "<what was recorded>"
 direction = "server"
-request = "<имя фикстуры с ClientHello>"
-# только полный поток обмена с HelloRetryRequest:
-second_request = "<имя фикстуры со вторым ClientHello>"
-second_request_offset = <число байт до второго ClientHello>
-length = <число байт>
+request = "<ClientHello fixture name>"
+# only the full stream of a HelloRetryRequest exchange:
+second_request = "<second ClientHello fixture name>"
+second_request_offset = <bytes before the second ClientHello>
+length = <byte count>
 
 [source]
 kind = "stand"
 stand = "openssl-basic"
-server = "<вывод openssl version>"
+server = "<output of openssl version>"
 server_command = "tests/stands/openssl-basic/run.sh"
-capture_command = "<команда записи>"
-date = "<ГГГГ-ММ-ДД>"
+capture_command = "<capture command>"
+date = "<YYYY-MM-DD>"
 
-# только если запись сделана с особого варианта стенда:
+# only if the capture used a stand variant:
 [source.conditions]
 max_send_frag = "512"
 
 [expected]
 outcome = "ok"
 exchange = "server_hello_done"
-summary = "<ожидаемый результат разбора>"
+summary = "<expected parse result>"
 
 [expected.fields]
-# ключи задаёт тест, например: legacy_version = "0x0303"
+# the test decides the keys, for example: legacy_version = "0x0303"
 ```
 
-## Запись
+## Capture
 
-Инструмент записи — подкоманда `cargo xtask record-fixture` (`xtask/src/record_fixture.rs`, справка — `cargo xtask record-fixture --help`). Она принимает только loopback-адреса, заданные IP-литералом.
+The capture tool is `cargo xtask record-fixture` (`xtask/src/record_fixture.rs`; help: `cargo xtask record-fixture --help`). It accepts only loopback addresses given as an IP literal.
 
-1. Поднять локальный стенд из `tests/stands/` (см. [stands/README.md](../stands/README.md)).
-2. Запустить запись, указав сценарий и версию сервера стенда:
+1. Start a local stand from `tests/stands/` (see [stands/README.md](../stands/README.md)).
+2. Record, naming the scenario and the stand's server version:
 
    ```sh
    cargo xtask record-fixture --addr 127.0.0.1:4433 --scenario tls12 \
      --server "$(openssl version)"
    ```
 
-   Подкоманда собирает ClientHello билдером `tls-probe`, отправляет его и сохраняет сырые байты обоих направлений до расшифровки, без нормализации. Она сама пишет `.hex` и `.meta.toml`: `length` — фактическое число байт, дата — день записи, `capture_command` — аргументы, по которым запись воспроизводится (включая `--random` и `--key-share`).
-3. Значения `[expected]` берутся из конфигурации сценария и стенда, а не из вывода тестируемого парсера. То, что парсер увидел при записи, подкоманда печатает в stderr для сверки.
-4. Если итог обмена не совпал с ожидаемым для сценария, фикстуры не пишутся, код возврата ненулевой. Существующие фикстуры без `--force` не перезаписываются. С `--force` запись выполняется и при несовпадении итога: в `[expected].exchange` попадает фактический итог, `[expected.fields]` и `[source.conditions]` не пишутся. В сценарии `tls13-hrr` без отправленного второго ClientHello подкоманда отказывает и с `--force`: такой ответ не является обменом с HRR, под именами фикстур сценария он не записывается, существующие фикстуры не изменяются.
+   The subcommand builds a ClientHello with the `tls-probe` builder, sends it, and saves the raw bytes of both directions up to encryption, without normalizing them. It writes `.hex` and `.meta.toml` itself: `length` is the actual byte count, the date is the capture day, and `capture_command` is the argument list that reproduces the capture (including `--random` and `--key-share`).
+3. `[expected]` values come from the scenario and stand configuration, not from the output of the parser under test. What the parser saw during capture is printed to stderr for comparison.
+4. If the exchange result does not match the scenario, no fixture is written and the exit code is non-zero. Existing fixtures are not overwritten without `--force`. With `--force`, capture proceeds even when the result disagrees: `[expected].exchange` receives the actual result, and `[expected.fields]` and `[source.conditions]` are not written. In the `tls13-hrr` scenario, if the second ClientHello was not sent, the subcommand refuses even with `--force`: that reply is not an HRR exchange, it is not recorded under the scenario's fixture names, and existing fixtures are left unchanged.
 
-Синтетические фикстуры и фикстуры из входов фаззера составляются вручную по правилам выше.
+Synthetic fixtures and fixtures taken from fuzzer inputs are written by hand, following the rules above.
 
-## Использование в unit-тестах
+## Use in unit tests
 
-- Тест подключает `.hex` и `.meta.toml` через `include_str!`. Байты декодирует вспомогательная функция в тестовом коде крейта (пропуск комментариев и пробелов, пары hex-цифр в байты). Внешние зависимости для этого не нужны.
-- Из `.meta.toml` тесты читают отдельные ключи функцией `meta_value(section, key)` (`crates/tls-probe/src/fixture_tests.rs`): `section` — имя секции без скобок (`"source"`, `"source.conditions"`, `"expected"`, `"expected.fields"`) или пустая строка для ключей до первой секции. Это разбор подмножества TOML, которое пишет `record-fixture`: одна пара «ключ = значение» в строке, значение — целое число или строка в двойных кавычках без раскрытия escape-последовательностей. TOML-парсер в зависимостях `tls-probe` не появляется.
-- Тесты проверяют по метаданным `length`, ссылки `request` и `second_request`, `second_request_offset`, сведения об источнике и условия стенда. Ожидаемые значения полей в `assert` должны совпадать с `[expected]`.
-- Тесты парсеров читают фикстуры `direction = "server"`; тесты билдера ClientHello сравнивают собранные байты с фикстурой `direction = "client"` (P1-05).
-- Загрузчик фикстур (`Fixture`, макрос `fixture!`) — тестовый код крейта `tls-probe`; общего для нескольких крейтов загрузчика нет.
+- A test includes `.hex` and `.meta.toml` with `include_str!`. A helper in the crate's test code decodes the bytes (skip comments and whitespace, turn hex pairs into bytes). No extra dependency is added for that.
+- Tests read individual keys from `.meta.toml` with `meta_value(section, key)` (`crates/tls-probe/src/fixture_tests.rs`). `section` is the section name without brackets (`"source"`, `"source.conditions"`, `"expected"`, `"expected.fields"`) or an empty string for keys before the first section. That parser accepts the subset of TOML that `record-fixture` writes: one key = value pair per line, value an integer or a double-quoted string with no escape expansion. `tls-probe` does not gain a TOML dependency.
+- Tests check `length`, the `request` and `second_request` links, `second_request_offset`, source data and stand conditions against the metadata. Field values in `assert` must match `[expected]`.
+- Parser tests read fixtures with `direction = "server"`. ClientHello builder tests compare assembled bytes with a fixture of `direction = "client"` (P1-05).
+- The fixture loader (`Fixture`, the `fixture!` macro) is test code in the `tls-probe` crate. There is no loader shared across crates.
 
-## Правила
+## Rules
 
-- Фикстуры снимаются только с локальных стендов из `tests/stands/` или из входов фаззера; синтетические фикстуры помечаются явно (см. выше). Записывать ответы внешних хостов нельзя.
-- Приватные ключи в фикстуры не попадают. Сертификаты стендов самоподписанные и генерируются на лету, поэтому сертификат внутри записанного ответа относится к уже не существующему ключу.
-- Фикстура без `.meta.toml` или с незаполненными обязательными полями не принимается.
+- Fixtures are captured only from local stands under `tests/stands/`, or taken from fuzzer inputs. Synthetic fixtures are marked as such (see above). Replies from external hosts are not recorded.
+- Private keys do not enter a fixture. Stand certificates are self-signed and generated on the fly, so a certificate inside a recorded reply belongs to a key that no longer exists.
+- A fixture without `.meta.toml`, or with a required field left empty, is not accepted.

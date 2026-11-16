@@ -1,6 +1,7 @@
 [package]
 name = "tls-data"
-description = "Статические таблицы параметров TLS: реестры IANA и дополнения"
+description = "Static TLS parameter tables: IANA registries and testssl.sh supplements"
+repository.workspace = true
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true

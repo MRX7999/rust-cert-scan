@@ -1,6 +1,7 @@
 [package]
 name = "tls-session"
-description = "Полноценный handshake: key schedule TLS 1.3 и handshake TLS 1.0-1.2"
+description = "Full handshake: TLS 1.3 key schedule and TLS 1.0-1.2 handshake"
+repository.workspace = true
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true

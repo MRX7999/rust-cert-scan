@@ -21,6 +21,7 @@ edition = "2024"
 rust-version = "1.96"
 license = "GPL-2.0-only"
 publish = false
+repository = "https://github.com/MRX7999/rust-cert-scan"
 
 # Внутренние крейты workspace. Внешние зависимости добавляются только через
 # `cargo add`, чтобы версии были реальными и попадали в Cargo.lock.

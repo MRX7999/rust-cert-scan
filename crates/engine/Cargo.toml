@@ -1,6 +1,7 @@
 [package]
 name = "engine"
-description = "Движок сканирования: цели, планировщик, лимиты, backoff, checkpoint"
+description = "Scan engine: targets, scheduler, limits, backoff and checkpoints"
+repository.workspace = true
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true

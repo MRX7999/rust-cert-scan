@@ -1,6 +1,7 @@
 [package]
 name = "tls-probe"
-description = "Wire-формат TLS без I/O: сборка ClientHello и разбор ответов сервера"
+description = "Sans-I/O TLS wire format: ClientHello builder and server-reply parser"
+repository.workspace = true
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
