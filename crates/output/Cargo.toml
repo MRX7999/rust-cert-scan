@@ -1,6 +1,7 @@
 [package]
 name = "output"
-description = "Типы результата и сериализация в JSON и NDJSON"
+description = "Scan result types and JSON / NDJSON writers"
+repository.workspace = true
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true

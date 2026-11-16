@@ -1,54 +1,55 @@
-# Тестовые стенды и фикстуры
+# Test stands and fixtures
 
-Инфраструктура интеграционных тестов certscan (`docs/PLAN.md`, P0-06; `docs/ARCHITECTURE.md`, раздел 9). Интеграционные тесты ходят только на локальные стенды; обращения к внешним хостам запрещены.
+Integration-test infrastructure for certscan (`docs/PLAN.md`, P0-06; `docs/ARCHITECTURE.md`, section 9). Integration tests talk only to local stands. Contacting an external host is not allowed.
 
-## Раскладка
+## Layout
 
-| Путь | Назначение |
+| Path | Role |
 |---|---|
-| `tests/docker-compose.yml` | описание стендов для docker compose |
-| `tests/stands/<имя>/` | один стенд: скрипты запуска, генерация сертификата, Dockerfile |
-| `tests/fixtures/` | общие байтовые фикстуры; формат — в [fixtures/README.md](fixtures/README.md) |
+| `tests/docker-compose.yml` | stand definitions for docker compose |
+| `tests/stands/<name>/` | one stand: launch scripts, certificate generation, Dockerfile |
+| `tests/fixtures/` | shared byte fixtures. Format: [fixtures/README.md](fixtures/README.md) |
 
-## Стенды
+## Stands
 
-| Стенд | Адрес | Что поднимает |
+| Stand | Address | What it runs |
 |---|---|---|
-| `openssl-basic` | `127.0.0.1:4433` | `openssl s_server`, TLS 1.2 и TLS 1.3, самоподписанный сертификат ECDSA P-256 (`CN=localhost`) |
+| `openssl-basic` | `127.0.0.1:4433` | `openssl s_server`, TLS 1.2 and TLS 1.3, self-signed ECDSA P-256 certificate (`CN=localhost`) |
 
-Стенды с намеренно уязвимыми конфигурациями (SSLv2/SSLv3, export-шифры, сжатие) и STARTTLS-серверы добавляются в следующих фазах вместе с проверками, которым они нужны.
+Stands with intentionally weak configurations (SSLv2/SSLv3, export ciphers, compression) and STARTTLS servers are added in later phases, together with the checks that need them. Per-stand details, including the fragmentation and DHE-RSA variants, are in [stands/README.md](stands/README.md).
 
-## Запуск
+## Run
 
-Напрямую, нужен OpenSSL 3.0 или новее в `PATH`:
+Directly. OpenSSL 3.0 or newer must be on `PATH`:
 
 ```sh
-tests/stands/openssl-basic/run.sh      # слушает 127.0.0.1:4433, остановка — Ctrl+C
+tests/stands/openssl-basic/run.sh
+# listens on 127.0.0.1:4433; stop with Ctrl+C
 ```
 
-Через docker compose:
+Through docker compose:
 
 ```sh
 docker compose -f tests/docker-compose.yml up -d openssl-basic
 docker compose -f tests/docker-compose.yml down
 ```
 
-Проверка соединения:
+Check the connection:
 
 ```sh
 openssl s_client -connect 127.0.0.1:4433 -brief </dev/null
 ```
 
-Параметры `run.sh` задаются переменными окружения: `STAND_BIND` (по умолчанию `127.0.0.1`), `STAND_PORT` (`4433`), `STAND_TMP` (каталог ключа и сертификата, по умолчанию `.tmp/` рядом со скриптом).
+`run.sh` reads `STAND_BIND` (default `127.0.0.1`), `STAND_PORT` (`4433`) and `STAND_TMP` (key and certificate directory, default `.tmp/` next to the script).
 
-## Ключи и сертификаты
+## Keys and certificates
 
-Тестовые ключи и сертификаты в репозитории не хранятся. `gen-cert.sh` создаёт их при каждом запуске стенда: локально — в `tests/stands/<имя>/.tmp/` (каталог в `.gitignore`), в контейнере — в `/tmp/stand` на tmpfs. Сертификат действует 30 дней.
+Test keys and certificates are not stored in the repository. `gen-cert.sh` creates them on every stand start: locally in `tests/stands/<name>/.tmp/` (gitignored), in the container in `/tmp/stand` on tmpfs. The certificate is valid for 30 days.
 
-## Правила для новых стендов
+## Rules for a new stand
 
-- Стенд слушает только `127.0.0.1`. В compose порт публикуется как `127.0.0.1:<порт>:<порт>`; адрес `0.0.0.0` допустим только внутри контейнера.
-- Ключи и сертификаты генерируются на лету во временный каталог, в git и в образ не попадают.
-- Shell-скрипты начинаются с `set -euo pipefail`, имеют исполняемый бит и проходят `shellcheck`.
-- Образы с уязвимыми конфигурациями запускаются только в изолированной сети стенда.
-- Каждый новый стенд добавляется в таблицу выше с адресом и составом.
+- The stand listens only on `127.0.0.1`. Compose publishes the port as `127.0.0.1:<port>:<port>`. `0.0.0.0` is allowed only inside the container.
+- Keys and certificates are generated into a temporary directory. They do not enter git or the image.
+- Shell scripts start with `set -euo pipefail`, have the executable bit, and pass `shellcheck`.
+- Images with weak configurations run only on the stand's isolated network.
+- Each new stand is added to the table above with its address and what it runs.

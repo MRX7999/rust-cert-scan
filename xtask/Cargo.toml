@@ -1,6 +1,7 @@
 [package]
 name = "xtask"
-description = "Служебные команды разработки: cargo xtask <подкоманда>"
+description = "Development tasks: cargo xtask <subcommand>"
+repository.workspace = true
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true

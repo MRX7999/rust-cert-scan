@@ -1,5 +1,7 @@
 # Rust-Cert-Scan: архитектура
 
+> English status and repository guide: [README.md](README.md). This design record is maintained in Russian.
+
 Статус: идёт реализация по [PLAN.md](PLAN.md): Фаза 0 (каркас workspace и CI) выполнена, в работе Фаза 1.
 Имя бинарника: `certscan`, префикс переменных окружения — `CERTSCAN_*` (решение D-02 в [DECISIONS.md](DECISIONS.md)).
 

@@ -1,6 +1,7 @@
 [package]
 name = "x509-check"
-description = "Разбор сертификатов X.509, цепочки, trust stores, OCSP и CRL"
+description = "X.509 parsing, chain building, trust stores, OCSP and CRL"
+repository.workspace = true
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true

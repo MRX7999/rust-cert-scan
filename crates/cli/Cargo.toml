@@ -1,6 +1,7 @@
 [package]
 name = "cli"
-description = "Интерфейс командной строки и бинарник certscan"
+description = "certscan command-line interface"
+repository.workspace = true
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true

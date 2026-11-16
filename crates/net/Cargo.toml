@@ -1,6 +1,7 @@
 [package]
 name = "net"
-description = "Connector: TCP, DNS-кэш, proxy, STARTTLS, таймауты и учёт соединений"
+description = "Connector: TCP, DNS cache, timeouts and connection accounting"
+repository.workspace = true
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true

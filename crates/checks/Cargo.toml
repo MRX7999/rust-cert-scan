@@ -1,6 +1,7 @@
 [package]
 name = "checks"
-description = "Проверки сканера: общий trait, кэш фактов и реестр"
+description = "Scanner checks: shared trait, fact cache and registry"
+repository.workspace = true
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true

@@ -1,5 +1,7 @@
 # Происхождение данных tls-data
 
+> English: vendored snapshots. Do not edit the table between the `iana:begin` and `iana:end` markers by hand; `cargo xtask update-data` rewrites it, including the Russian column headers. The cipher map is pinned to a commit and is not refreshed by that command. See [docs/README.md](../../../docs/README.md).
+
 Все файлы в этом каталоге — снимки внешних источников, сохранённые без правок. `build.rs` читает только их и к сети не обращается.
 
 ## Реестры IANA
